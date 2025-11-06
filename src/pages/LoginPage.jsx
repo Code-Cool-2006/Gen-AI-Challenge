@@ -24,7 +24,7 @@ const GoogleAuth = ({ setMessage }) => {
 const LoginPage = () => {
   const navigate = useNavigate(); // Get the navigate function
 
-  const API_BASE_URL = "http://localhost:8000";
+  const API_BASE_URL = "";
 
   // --- State Management ---
   const [isRegister, setIsRegister] = useState(false);
@@ -155,8 +155,7 @@ const LoginPage = () => {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
-                'Accept': 'application/json',
-                'Authorization': `Bearer ${config.AUTH_TOKEN}`
+                'Accept': 'application/json'
             },
             body: formData
         });

@@ -1,7 +1,11 @@
 import json
 import litellm
+import os
+from dotenv import load_dotenv
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
+
+load_dotenv(dotenv_path='d:\\career-ai\\.env')
 
 # --- Pydantic Model for Request Body ---
 class MarketInsightsRequest(BaseModel):
@@ -19,6 +23,8 @@ async def get_market_insights(request: MarketInsightsRequest):
     """
     Provides job market insights for a specific job title using LiteLLM.
     """
+    os.environ["GEMINI_API_KEY"] = os.getenv("VITE_GEMINI_API_KEY", "")
+    litellm.model = "gemini/gemini-2.5-pro"
     print(f"Received market insights request for: {request.jobTitle}")
     try:
         system_instruction = """

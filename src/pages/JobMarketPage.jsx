@@ -18,9 +18,6 @@ const JobMarketPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // 🎯 Add your Gemini API key here
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-
   const handleGetInsights = async () => {
     if (!jobTitle) {
       setError("Please enter a job title.");
@@ -31,50 +28,26 @@ const JobMarketPage = () => {
     setError(null);
     setInsights(null);
 
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-    const systemPrompt = `
-      You are a job market analyst. 
-      Provide key insights for a specific job title.
-      Respond ONLY with valid JSON in this format:
-      {
-        "averageSalary": "string (e.g. '$120,000 USD')",
-        "demand": "string (e.g. 'High' or 'Growing by 15%')",
-        "topSkills": [
-          { "name": "string", "importance": number (1-100) }
-        ]
-      }
-      Provide 5–10 top skills dynamically based on the role.
-    `;
-    const userQuery = `Provide job market insights for a "${jobTitle}".`;
-
-    const payload = {
-      systemInstruction: { parts: [{ text: systemPrompt }] },
-      contents: [{ parts: [{ text: userQuery }] }],
-    };
-
     try {
-      const response = await fetch(apiUrl, {
+      const response = await fetch("/api/market-insights", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ jobTitle }),
       });
 
-      if (!response.ok)
-        throw new Error(`HTTP error! status: ${response.status}`);
-      const result = await response.json();
-
-      if (!result.candidates || result.candidates.length === 0) {
-        throw new Error("No valid response from Gemini. Try again.");
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
       }
 
-      const rawText = result.candidates[0]?.content?.parts?.[0]?.text || "";
-      const cleanedText = rawText.replace(/```json|```/g, "").trim();
-      const parsedData = JSON.parse(cleanedText);
+      const parsedData = await response.json();
 
-      // 🔽 Sort skills dynamically by importance
-      parsedData.topSkills = parsedData.topSkills.sort(
-        (a, b) => b.importance - a.importance
-      );
+      // Sort skills dynamically by importance
+      if (parsedData.topSkills) {
+        parsedData.topSkills = parsedData.topSkills.sort(
+          (a, b) => b.importance - a.importance
+        );
+      }
 
       setInsights(parsedData);
     } catch (err) {
