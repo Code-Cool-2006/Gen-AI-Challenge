@@ -42,6 +42,14 @@ const JobMarketPage = () => {
 
       const parsedData = await response.json();
 
+      // Convert importance values to real numbers
+      if (parsedData.topSkills) {
+        parsedData.topSkills = parsedData.topSkills.map(skill => ({
+          ...skill,
+          importance: Number(skill.importance) || 0,
+        }));
+      }
+
       // Sort skills dynamically by importance
       if (parsedData.topSkills) {
         parsedData.topSkills = parsedData.topSkills.sort(

@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy.inspection import inspect
 from typing import List
 
 from .. import schemas
@@ -7,100 +8,167 @@ from ..database import get_db
 from ..models import User, Skill, Project, Experience, Education
 from ..utils.security import get_current_user
 
-# --- Router Setup ---
+# ------------------------------------------------------------
+# Router Setup
+# ------------------------------------------------------------
+
 router = APIRouter(
     prefix="/api/profile",
     tags=["Profile Management"]
 )
 
-# Helper function to get a profile item by ID
+
+# ------------------------------------------------------------
+# Helper – Detect primary key automatically (fixed version)
+# ------------------------------------------------------------
+
 def get_profile_item(db: Session, model, item_id: int, user_id: int):
+    """
+    Automatically detects the primary key field of the model.
+    Works for Skill, Project, Experience, Education, etc.
+    """
+    pk_column = inspect(model).primary_key[0]
+
     item = db.query(model).filter(
-        model.user_id == user_id, 
-        getattr(model, f"{model.__tablename__[:-1]}_id" if model.__tablename__.endswith('s') else f"{model.__tablename__}_id") == item_id
+        model.user_id == user_id,
+        pk_column == item_id
     ).first()
+
     if not item:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{model.__name__} not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"{model.__name__} not found"
+        )
+
     return item
 
-# --- Skills Endpoints ---
+
+# ------------------------------------------------------------
+# SKILLS — CRUD
+# ------------------------------------------------------------
 
 @router.post("/skills", response_model=schemas.SkillSchema, status_code=status.HTTP_201_CREATED)
-def add_skill_to_profile(
-    skill_data: schemas.SkillBase,  # Corrected from SkillCreate
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
+def add_skill(skill_data: schemas.SkillBase, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     new_skill = Skill(**skill_data.model_dump(), user_id=current_user.user_id)
     db.add(new_skill)
     db.commit()
     db.refresh(new_skill)
     return new_skill
 
+
 @router.put("/skills/{skill_id}", response_model=schemas.SkillSchema)
-def update_skill_in_profile(
-    skill_id: int,
-    skill_data: schemas.SkillBase, # Corrected from SkillCreate
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    skill_to_update = get_profile_item(db, Skill, skill_id, current_user.user_id)
-    skill_to_update.skill_name = skill_data.skill_name
-    skill_to_update.proficiency = skill_data.proficiency
+def update_skill(skill_id: int, skill_data: schemas.SkillBase, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    skill = get_profile_item(db, Skill, skill_id, current_user.user_id)
+    skill.skill_name = skill_data.skill_name
+    skill.proficiency = skill_data.proficiency
+
     db.commit()
-    db.refresh(skill_to_update)
-    return skill_to_update
+    db.refresh(skill)
+    return skill
+
 
 @router.delete("/skills/{skill_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_skill_from_profile(
-    skill_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    skill_to_delete = get_profile_item(db, Skill, skill_id, current_user.user_id)
-    db.delete(skill_to_delete)
+def delete_skill(skill_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    skill = get_profile_item(db, Skill, skill_id, current_user.user_id)
+    db.delete(skill)
     db.commit()
     return
 
-# --- Projects Endpoints ---
+
+# ------------------------------------------------------------
+# PROJECTS — CRUD
+# ------------------------------------------------------------
 
 @router.post("/projects", response_model=schemas.ProjectSchema, status_code=status.HTTP_201_CREATED)
-def add_project_to_profile(
-    project_data: schemas.ProjectBase, # Corrected from ProjectCreate
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
+def add_project(project_data: schemas.ProjectBase, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     new_project = Project(**project_data.model_dump(), user_id=current_user.user_id)
     db.add(new_project)
     db.commit()
     db.refresh(new_project)
     return new_project
 
-# --- Experience Endpoints ---
+
+@router.put("/projects/{project_id}", response_model=schemas.ProjectSchema)
+def update_project(project_id: int, project_data: schemas.ProjectBase, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    project = get_profile_item(db, Project, project_id, current_user.user_id)
+
+    for field, value in project_data.model_dump().items():
+        setattr(project, field, value)
+
+    db.commit()
+    db.refresh(project)
+    return project
+
+
+@router.delete("/projects/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_project(project_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    project = get_profile_item(db, Project, project_id, current_user.user_id)
+    db.delete(project)
+    db.commit()
+    return
+
+
+# ------------------------------------------------------------
+# EXPERIENCE — CRUD
+# ------------------------------------------------------------
 
 @router.post("/experience", response_model=schemas.ExperienceSchema, status_code=status.HTTP_201_CREATED)
-def add_experience_to_profile(
-    experience_data: schemas.ExperienceBase, # Corrected from ExperienceCreate
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    new_experience = Experience(**experience_data.model_dump(), user_id=current_user.user_id)
-    db.add(new_experience)
+def add_experience(exp_data: schemas.ExperienceBase, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    new_exp = Experience(**exp_data.model_dump(), user_id=current_user.user_id)
+    db.add(new_exp)
     db.commit()
-    db.refresh(new_experience)
-    return new_experience
+    db.refresh(new_exp)
+    return new_exp
 
-# --- Education Endpoints ---
+
+@router.put("/experience/{exp_id}", response_model=schemas.ExperienceSchema)
+def update_experience(exp_id: int, exp_data: schemas.ExperienceBase, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    exp = get_profile_item(db, Experience, exp_id, current_user.user_id)
+
+    for field, value in exp_data.model_dump().items():
+        setattr(exp, field, value)
+
+    db.commit()
+    db.refresh(exp)
+    return exp
+
+
+@router.delete("/experience/{exp_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_experience(exp_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    exp = get_profile_item(db, Experience, exp_id, current_user.user_id)
+    db.delete(exp)
+    db.commit()
+    return
+
+
+# ------------------------------------------------------------
+# EDUCATION — CRUD
+# ------------------------------------------------------------
 
 @router.post("/education", response_model=schemas.EducationSchema, status_code=status.HTTP_201_CREATED)
-def add_education_to_profile(
-    education_data: schemas.EducationBase, # Corrected from EducationCreate
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    new_education = Education(**education_data.model_dump(), user_id=current_user.user_id)
-    db.add(new_education)
+def add_education(edu_data: schemas.EducationBase, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    new_edu = Education(**edu_data.model_dump(), user_id=current_user.user_id)
+    db.add(new_edu)
     db.commit()
-    db.refresh(new_education)
-    return new_education
+    db.refresh(new_edu)
+    return new_edu
 
+
+@router.put("/education/{edu_id}", response_model=schemas.EducationSchema)
+def update_education(edu_id: int, edu_data: schemas.EducationBase, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    edu = get_profile_item(db, Education, edu_id, current_user.user_id)
+
+    for field, value in edu_data.model_dump().items():
+        setattr(edu, field, value)
+
+    db.commit()
+    db.refresh(edu)
+    return edu
+
+
+@router.delete("/education/{edu_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_education(edu_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    edu = get_profile_item(db, Education, edu_id, current_user.user_id)
+    db.delete(edu)
+    db.commit()
+    return

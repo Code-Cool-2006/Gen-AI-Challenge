@@ -1,121 +1,209 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List
 
-# Use package-relative imports
 from ..database import get_db
-from ..models import User, InterviewSession
-from .. import schemas
-from ..utils.security import get_current_user
+from ..models import InterviewSession
 from ..services import gemini_service
-from dotenv import load_dotenv
+from ..utils.security import get_current_user
 
-# Load environment variables from .env file
-load_dotenv()
-# --- Router Setup ---
 router = APIRouter(
     prefix="/api/interview",
-    tags=["Interview"]
+    tags=["Mock Interview"]
 )
 
-# --- Pydantic Models ---
-class GenerateQuestionsRequest(BaseModel):
-    role: str
+class InterviewRequest(BaseModel):
+    job_title: str
+    experience_level: str
 
-class GenerateQuestionsResponse(BaseModel):
-    questions: List[str]
+class InterviewResponse(BaseModel):
+    question: str
+    session_id: str
 
-# --- API Endpoints ---
+class AnswerRequest(BaseModel):
+    session_id: str
+    answer: str
 
-@router.post("/generate-questions", response_model=GenerateQuestionsResponse)
-def generate_interview_questions(
-    request: GenerateQuestionsRequest,
+class AnswerResponse(BaseModel):
+    feedback: str
+    next_question: str
+    session_id: str
+
+@router.post("/start", response_model=InterviewResponse)
+async def start_interview(
+    request: InterviewRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     """
-    Generates 8 interview questions for a given role using the Gemini API.
+    Starts a new mock interview session.
+    Protected endpoint: requires JWT authentication.
     """
-    if not request.role:
+
+    # Validate input
+    job_title = request.job_title.strip()
+    experience_level = request.experience_level.strip()
+
+    if not job_title or not experience_level:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Role cannot be empty."
+            detail="Job title and experience level cannot be empty."
         )
 
     try:
-        # 1. Get AI generated questions from the Gemini service
-        questions = gemini_service.generate_interview_questions(role=request.role)
+        # Generate first question using AI
+        first_question = await gemini_service.generate_interview_question(job_title, experience_level)
 
-        # Check for errors from the service
-        if not questions or len(questions) == 0:
+        # Validate AI response
+        if not first_question or first_question.strip() == "":
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Unable to generate questions at this time."
+                detail="AI did not return a valid question."
             )
 
-        # 2. Return the questions to the user
-        return {"questions": questions}
-
-    except Exception as e:
-        print(f"An unexpected error occurred in generating questions: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An internal error occurred while generating interview questions."
+        # Create new interview session
+        new_session = InterviewSession(
+            user_id=current_user.user_id,
+            job_title=job_title,
+            experience_level=experience_level,
+            current_question=first_question,
+            status="active"
         )
 
-@router.post("/feedback", response_model=schemas.InterviewFeedbackResponse)
-def get_interview_feedback(
-    request: schemas.InterviewFeedbackRequest,
+        db.add(new_session)
+        db.commit()
+        db.refresh(new_session)
+
+        return InterviewResponse(
+            question=first_question,
+            session_id=str(new_session.session_id)
+        )
+
+    except HTTPException:
+        # Pass FastAPI errors
+        raise
+
+    except Exception as e:
+        print(f"Unexpected error while starting interview: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error while starting the interview."
+        )
+
+@router.post("/answer", response_model=AnswerResponse)
+async def answer_question(
+    request: AnswerRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     """
-    Receives an interview question and a user's answer, gets feedback from the Gemini API,
-    and saves the session to the database.
+    Processes the user's answer and provides feedback + next question.
+    Protected endpoint: requires JWT authentication.
     """
-    if not request.question or not request.user_answer:
+
+    # Validate input
+    session_id = request.session_id.strip()
+    answer = request.answer.strip()
+
+    if not session_id or not answer:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Question and answer cannot be empty."
+            detail="Session ID and answer cannot be empty."
         )
 
     try:
-        # 1. Get AI feedback from the Gemini service
-        ai_feedback_text = gemini_service.generate_interview_feedback(
-            question=request.question,
-            user_answer=request.user_answer
-        )
+        # Load session
+        session = db.query(InterviewSession).filter(InterviewSession.session_id == int(session_id)).first()
 
-        # Check for errors from the service
-        if ai_feedback_text.startswith("Error:") or ai_feedback_text.startswith("Sorry,"):
-             raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail=ai_feedback_text
+        if not session or session.user_id != current_user.user_id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Interview session not found."
             )
 
-        # 2. Save the entire session to the database
-        new_session = InterviewSession(
-            user_id=current_user.user_id,
-            question=request.question,
-            user_answer=request.user_answer,
-            ai_feedback=ai_feedback_text,
-            score=0  # Placeholder for potential future scoring logic
-        )
-        db.add(new_session)
-        db.commit()
-        db.refresh(new_session)  # ensure the object has DB-generated fields populated
+        if session.status != "active":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Interview session is not active."
+            )
 
-        # 3. Return the saved session (matches schemas.InterviewFeedbackResponse)
-        return {"session": new_session}
+        # Generate feedback and next question using AI
+        feedback, next_question = await gemini_service.process_interview_answer(
+            session.current_question, answer, session.job_title, session.experience_level
+        )
+
+        # Validate AI response
+        if not feedback or not next_question:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="AI did not return valid feedback or next question."
+            )
+
+        # Update session
+        session.current_question = next_question
+        db.commit()
+
+        return AnswerResponse(
+            feedback=feedback,
+            next_question=next_question,
+            session_id=session_id
+        )
 
     except HTTPException:
+        # Pass FastAPI errors
         raise
+
     except Exception as e:
-        print(f"An unexpected error occurred in interview feedback: {e}")
+        print(f"Unexpected error while processing answer: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An internal error occurred while processing your interview feedback."
+            detail="Internal server error while processing the answer."
         )
 
+@router.post("/end")
+async def end_interview(
+    request: AnswerRequest,  # Reusing for session_id
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """
+    Ends the interview session.
+    Protected endpoint: requires JWT authentication.
+    """
+
+    # Validate input
+    session_id = request.session_id.strip()
+
+    if not session_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Session ID cannot be empty."
+        )
+
+    try:
+        # Load session
+        session = db.query(InterviewSession).filter(InterviewSession.session_id == int(session_id)).first()
+
+        if not session or session.user_id != current_user.user_id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Interview session not found."
+            )
+
+        # End session
+        session.status = "completed"
+        db.commit()
+
+        return {"message": "Interview session ended successfully."}
+
+    except HTTPException:
+        # Pass FastAPI errors
+        raise
+
+    except Exception as e:
+        print(f"Unexpected error while ending interview: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error while ending the interview."
+        )

@@ -47,11 +47,11 @@ const ChatBot = () => {
 
     try {
       // POST to our server-side AI proxy to avoid exposing API keys in client
-      const res = await fetch("/api/ai/chat", {
+      const res = await fetch("/api/ai/chat/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          message: `You are a career assistant. Only answer questions about careers, jobs, job market, and skills. If the question is outside this scope, politely decline. Question: ${trimmed}`,
+          message: trimmed,
         }),
       });
 
@@ -65,25 +65,8 @@ const ChatBot = () => {
 
       const data = await res.json();
 
-      // Try multiple possible response shapes (including our proxy reply)
-      let botText = null;
-      try {
-        botText =
-          data?.reply ||
-          data?.candidates?.[0]?.content?.parts?.[0] ||
-          data?.candidates?.[0]?.content?.[0]?.text ||
-          data?.candidates?.[0]?.content?.[0] ||
-          data?.output?.[0]?.content?.[0]?.text ||
-          data?.output?.content?.[0]?.text ||
-          null;
-      } catch (e) {
-        console.debug("Response parsing fallback failed:", e);
-      }
-
-      if (!botText) {
-        console.warn("Unexpected AI response shape:", data);
-        botText = "⚠️ Sorry, I couldn't get a response.";
-      }
+      // The backend returns {response: "bot response"}
+      let botText = data?.response || "⚠️ Sorry, I couldn't get a response.";
 
       addMessage("bot", botText);
     } catch (error) {

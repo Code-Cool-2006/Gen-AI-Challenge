@@ -1,72 +1,92 @@
 import json
-import litellm
+import google.generativeai as genai
 import os
 from dotenv import load_dotenv
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-load_dotenv(dotenv_path='d:\\career-ai\\.env')
+# Load environment variables
+load_dotenv()
+VITE_GEMINI_API_KEY = os.getenv("VITE_GEMINI_API_KEY")
 
-# --- Pydantic Model for Request Body ---
+if not VITE_GEMINI_API_KEY:
+    raise RuntimeError("❌ VITE_GEMINI_API_KEY is missing in .env")
+
+# Configure Google Generative AI
+genai.configure(api_key=VITE_GEMINI_API_KEY)
+
+# Initialize model
+model = genai.GenerativeModel("gemini-2.5-flash")
+
+# --- Pydantic Model ---
 class MarketInsightsRequest(BaseModel):
-    jobTitle: str = Field(..., min_length=2, description="The job title to get insights for.")
+    jobTitle: str = Field(..., min_length=2)
 
-# Create a new router which will be imported into main.py
+# --- Router ---
 router = APIRouter(
     prefix="/api",
     tags=["Market Insights"]
 )
 
-# --- API Endpoint for Job Market Insights ---
+# --- Endpoint ---
 @router.post("/market-insights")
 async def get_market_insights(request: MarketInsightsRequest):
-    """
-    Provides job market insights for a specific job title using LiteLLM.
-    """
-    os.environ["GEMINI_API_KEY"] = os.getenv("VITE_GEMINI_API_KEY", "")
-    litellm.model = "gemini/gemini-2.5-pro"
     print(f"Received market insights request for: {request.jobTitle}")
+
     try:
         system_instruction = """
-              You are a job market analyst.
-              Provide key insights for a specific job title.
-              Respond ONLY with valid JSON in this format:
-              {
-                "averageSalary": "string (e.g. '$120,000 USD')",
-                "demand": "string (e.g. 'High' or 'Growing by 15%')",
-                "topSkills": [
-                  { "name": "string", "importance": number (1-100) }
-                ]
-              }
-              Provide 5–10 top skills dynamically based on the role.
-            """
+You are a job market analyst.
+Provide key insights for a specific job title.
+Respond ONLY with valid JSON in this exact format:
 
-        prompt = f'Provide job market insights for a "{request.jobTitle}".'
+{
+  "averageSalary": "string",
+  "demand": "string",
+  "topSkills": [
+    { "name": "string", "importance": number }
+  ]
+}
 
-        print("Generating market insights from LiteLLM...")
-        response = litellm.completion(
-            model=litellm.model,
-            messages=[
-                {"role": "system", "content": system_instruction},
-                {"role": "user", "content": prompt}
+Rules:
+- Return ONLY JSON.
+- No explanation.
+- 5–10 skills.
+"""
+
+        prompt = f'Provide job market insights for "{request.jobTitle}".'
+
+        # --- FIXED Gemini Request Format ---
+        response = model.generate_content(
+            contents=[
+                {
+                    "parts": [
+                        {"text": system_instruction},
+                        {"text": prompt}
+                    ]
+                }
             ]
         )
 
-        result_text = response.choices[0].message.content
+        result_text = response.text
 
         if not result_text or not result_text.strip():
-            raise HTTPException(status_code=500, detail="The model returned an empty response.")
+            raise HTTPException(status_code=500, detail="Model returned an empty response.")
 
-        # Clean and parse the JSON response from the model
-        cleaned_text = result_text.replace("```json", "").replace("```", "").strip()
+        # Remove ```json fences if any
+        cleaned_text = (
+            result_text.replace("```json", "")
+                       .replace("```", "")
+                       .strip()
+        )
+
         insights_data = json.loads(cleaned_text)
 
         print("Market insights generated successfully.")
         return insights_data
 
     except json.JSONDecodeError:
-        print("Error decoding JSON from model response.")
-        raise HTTPException(status_code=500, detail="Failed to parse the response from the AI model.")
+        print("❌ JSON decoding failed.")
+        raise HTTPException(status_code=500, detail="Failed to parse the JSON from AI response.")
     except Exception as e:
-        print(f"An error occurred: {e}")
-        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+        print(f"❌ Error: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal error: {str(e)}")

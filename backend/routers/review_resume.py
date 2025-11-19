@@ -1,16 +1,18 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
-import litellm
+import google.generativeai as genai
+import os
 
-# --- Pydantic Models ---
-# Yeh define karta hai ki frontend se resume review ke liye kaisa data aayega
+# --- Configure Gemini ---
+genai.configure(api_key=os.getenv("VITE_GEMINI_API_KEY"))
+
 class ResumeRequest(BaseModel):
     resumeText: str
     collegeTier: str | None = "Tier 2/3"
     characterProfileKey: str | None = "Not specified"
     skills: list[str] | None = []
 
-# --- Mock Data (For context, same as frontend) ---
+# Character profiles
 character_profiles = {
     "Explorer": {"name": "The Explorer"},
     "Captain": {"name": "The Captain"},
@@ -19,63 +21,54 @@ character_profiles = {
     "DeepDiver": {"name": "The Deep Diver"},
 }
 
-# --- Router Setup ---
-# Is feature ke saare endpoints "/api/resume" se start honge
 router = APIRouter(
     prefix="/api/resume",
     tags=["Resume Review"]
 )
 
-# --- API Endpoint ---
+
 @router.post("/review")
 async def review_resume(data: ResumeRequest):
-    """
-    User ke resume text ko analyze karke AI-powered feedback deta hai.
-    """
-    try:
-        system_instruction = """You are an expert career coach and recruiter specializing in helping students from Tier 2/3 colleges land jobs at top companies.
-Your feedback must be constructive, encouraging, and highly actionable.
-Analyze the resume for ATS compatibility, impact metrics, action verbs, and clarity.
-Provide feedback in simple markdown format."""
 
-        prompt = f"""{system_instruction}
+    system_instruction = """You are an expert career coach and recruiter specializing in 
+    helping students from Tier 2/3 colleges land jobs at top companies.
+    Provide clear, impactful, ATS-friendly resume feedback in markdown format."""
 
+    prompt = f"""
 Please review the following resume for a student from a {data.collegeTier} college.
-Their self-identified character profile on CareerBridge is "{character_profiles.get(data.characterProfileKey, {}).get('name', 'Not specified')}".
-Their target skills are: {', '.join(data.skills) if data.skills else "Not specified"}.
 
-Resume Text:
+Character Profile: "{character_profiles.get(data.characterProfileKey, {}).get('name', 'Not specified')}"
+Target Skills: {', '.join(data.skills) if data.skills else "Not specified"}
+
+Resume:
 ---
 {data.resumeText}
 ---
 
-Provide a review with the following structure:
+Follow this structure:
+
 ### Overall Impression
-(A brief, encouraging summary)
+(brief summary)
 
-### ATS Compatibility Score: [Give a score out of 10]
-(Briefly explain why, mentioning keywords and formatting)
+### ATS Compatibility Score (Rate out of 10)
+(explain keywords, clarity, formatting)
 
-### Actionable Feedback (Bulleted List)
-- Point 1
-- Point 2
-- Point 3"""
+### Actionable Feedback
+- Bullet point
+- Bullet point
+- Bullet point
+"""
 
-        response = litellm.completion(
-            model=litellm.model,
-            messages=[
-                {"role": "system", "content": system_instruction},
-                {"role": "user", "content": prompt}
-            ]
+    try:
+        model = genai.GenerativeModel(
+            model_name="gemini-2.0-flash",
+            system_instruction=system_instruction
         )
 
-        feedback = response.choices[0].message.content
+        response = model.generate_content(prompt)
 
-        if feedback and feedback.strip():
-            return {"feedback": feedback}
-        else:
-            return {"error": "Could not get feedback. The model returned an empty response."}
+        return {"feedback": response.text}
 
     except Exception as e:
-        print(f"Error during AI API call: {e}")
-        return {"error": "An error occurred while generating feedback."}
+        print("Error:", e)
+        return {"error": "Could not generate feedback."}

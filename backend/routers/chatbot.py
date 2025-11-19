@@ -1,42 +1,46 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from pydantic import BaseModel
-import litellm
+import google.generativeai as genai
+import os
+from dotenv import load_dotenv
 
-# --- Pydantic Models ---
+load_dotenv()
+
+# Load API key
+VITE_GEMINI_API_KEY = os.getenv("VITE_GEMINI_API_KEY")
+
+if not VITE_GEMINI_API_KEY:
+    raise RuntimeError("❌ VITE_GEMINI_API_KEY is missing in .env")
+
+genai.configure(api_key=VITE_GEMINI_API_KEY)
+
 class ChatRequest(BaseModel):
     message: str
 
-# --- Router Setup ---
 router = APIRouter(
-    prefix="/api/chatbot",
+    prefix="/api/ai/chat",
     tags=["ChatBot"]
 )
 
-# --- API Endpoint ---
+model = genai.GenerativeModel("gemini-2.5-flash")  # or gemini-2.0, etc.
+
 @router.post("/")
 async def chat_with_bot(data: ChatRequest):
-    """
-    Chat with the career assistant bot.
-    """
     try:
-        system_instruction = """You are a career assistant. Only answer questions about careers, jobs, job market, and skills.
-If the question is outside this scope, politely decline."""
+        prompt = f"""
+You are a career assistant. 
+Only answer questions related to careers, jobs, job market, and skills.
+If the question is outside this scope, politely decline.
 
-        response = litellm.completion(
-            model=litellm.model,
-            messages=[
-                {"role": "system", "content": system_instruction},
-                {"role": "user", "content": f"You are a career assistant. Only answer questions about careers, jobs, job market, and skills. If the question is outside this scope, politely decline. Question: {data.message}"}
-            ]
-        )
+User question: {data.message}
+"""
 
-        bot_response = response.choices[0].message.content
+        response = model.generate_content(prompt)
 
-        if bot_response and bot_response.strip():
-            return {"response": bot_response}
-        else:
-            return {"error": "Could not get response from the AI model."}
+        return {
+            "response": response.text
+        }
 
     except Exception as e:
-        print(f"Error during AI API call: {e}")
-        return {"error": "An error occurred while processing your request."}
+        print("Error:", e)
+        return {"error": "Failed to get response from Google AI."}

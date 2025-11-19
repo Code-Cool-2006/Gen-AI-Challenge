@@ -89,6 +89,10 @@ class InterviewSession(Base):
 
     session_id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey('users.user_id'))
+    job_title = Column(String(100))
+    experience_level = Column(String(50))
+    current_question = Column(Text)
+    status = Column(String(20), default='active')
     question = Column(Text)
     user_answer = Column(Text)
     ai_feedback = Column(Text)
