@@ -1,3 +1,4 @@
+
 import json
 import google.generativeai as genai
 import os
@@ -7,13 +8,13 @@ from pydantic import BaseModel, Field
 
 # Load environment variables
 load_dotenv()
-VITE_GEMINI_API_KEY = os.getenv("VITE_GEMINI_API_KEY")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") or os.getenv("VITE_GEMINI_API_KEY")
 
-if not VITE_GEMINI_API_KEY:
-    raise RuntimeError("❌ VITE_GEMINI_API_KEY is missing in .env")
+if not GEMINI_API_KEY:
+    raise RuntimeError("❌ GEMINI_API_KEY is missing in .env")
 
 # Configure Google Generative AI
-genai.configure(api_key=VITE_GEMINI_API_KEY)
+genai.configure(api_key=GEMINI_API_KEY)
 
 # Initialize model
 model = genai.GenerativeModel("gemini-2.5-flash")

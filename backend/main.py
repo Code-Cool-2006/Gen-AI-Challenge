@@ -46,6 +46,7 @@ origins = [
     "http://localhost:5175",  # Vite/React frontend address (now)
     "http://localhost:5176",  # Vite/React frontend address (current)
     "http://localhost:3000",  # Common alternative for React dev servers
+    "https://career-ai-om767.vercel.app",  # Deployed Vercel frontend URL
     # Add your deployed frontend URL here when you go live
 ]
 
