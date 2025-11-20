@@ -3,6 +3,7 @@ uvicorn[standard]
 sqlalchemy
 pymysql
 pydantic
+email-validator
 python-dotenv
 passlib[bcrypt]
 python-jose[cryptography]
