@@ -174,7 +174,7 @@ function Contact() {
           <div className="step">
             <div className="step-number">📧</div>
             <h3>Email</h3>
-            <p>support@careerai.com</p>
+            <p>careeraisrohr@gmail.com</p>
           </div>
           <div className="step-arrow">→</div>
           <div className="step">

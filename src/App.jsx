@@ -1,5 +1,4 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-
 import Footer from "./components/Footer/Footer";
 import Navbar from "./components/Navbar/Navbar";
 import Home from "./pages/Home";
@@ -13,28 +12,42 @@ import JobMarketPage from "./pages/JobMarketPage";
 import ResumeAnalyzer from "./pages/ResumeAnalyzer";
 import "./styles/main.css";
 import LoginPage from "./pages/LoginPage";
-
 function App() {
   return (
     <Router>
-      <div className="App">
+      <div
+        className="App"
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
         <Routes>
           {/* Public routes */}
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<LoginPage />} />
           <Route path="/login" element={<LoginPage />} />
 
           {/* Protected routes with Navbar */}
           <Route
             path="/*"
             element={
-              <div>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  minHeight: "100vh",
+                }}
+              >
                 <Navbar />
-                <div
+                <main
                   style={{
-                    flex: "1 1 auto",
-                    margin: "0 1rem 1rem 1rem",
-                    padding: "0 1rem",
-                    paddingTop: "var(--header-height, 72px)",
+                    flex: "1 0 auto",
+                    width: "100%",
+                    maxWidth: "100%",
+                    margin: "0 auto",
+                    padding: "1rem",
+                    paddingTop: "calc(var(--header-height, 80px) + 1rem)",
                   }}
                 >
                   <Routes>
@@ -49,19 +62,9 @@ function App() {
                       path="/resume-analyze"
                       element={<ResumeAnalyzer />}
                     />
-                    <Route path="/about" element={<About />} />
-                    <Route path="/contact" element={<Contact />} />
-                    <Route path="/resume-builder" element={<ResumePage />} />
-                    <Route path="/mock-interview" element={<MockInterview />} />
-                    <Route path="/career-roadmap" element={<CareerRoadmap />} />
-                    <Route path="/job-market" element={<JobMarketPage />} />
-                    <Route
-                      path="/resume-analyze"
-                      element={<ResumeAnalyzer />}
-                    />
                     <Route path="/chatbot" element={<ChatBot />} />
                   </Routes>
-                </div>
+                </main>
                 <Footer />
               </div>
             }
@@ -71,5 +74,4 @@ function App() {
     </Router>
   );
 }
-
 export default App;

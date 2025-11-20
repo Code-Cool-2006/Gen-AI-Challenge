@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom"; // Add this import
-import config from '../config.json';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
+import { auth, db } from "../firebase/config";
 
-  // --- GoogleAuth Component (Placeholder) ---
+// --- GoogleAuth Component (Placeholder) ---
 const GoogleAuth = ({ setMessage }) => {
   const handleGoogleLogin = () => {
-    setMessage("ℹ Google login integration coming soon! Please use email/password for now.");
+    setMessage("ℹ Google login is a placeholder feature for demonstration.");
   };
 
   return (
@@ -24,8 +26,6 @@ const GoogleAuth = ({ setMessage }) => {
 const LoginPage = () => {
   const navigate = useNavigate(); // Get the navigate function
 
-  const API_BASE_URL = "";
-
   // --- State Management ---
   const [isRegister, setIsRegister] = useState(false);
   const [fullName, setFullName] = useState("");
@@ -39,7 +39,6 @@ const LoginPage = () => {
   );
   const [isTipLoading, setIsTipLoading] = useState(false);
   const [roleDescription, setRoleDescription] = useState("");
-  const [error, setError] = useState(""); // Add this near other state declarations
 
   // --- Helper Functions ---
 
@@ -104,85 +103,67 @@ const LoginPage = () => {
   const handleRegister = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setMessage("");
+    setMessage("Creating account...");
+
+    if (!fullName.trim()) {
+      setMessage("❌ Please enter your full name");
+      setLoading(false);
+      return;
+    }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          full_name: fullName,
-          email: email,
-          password: password,
-          role: role,
-        }),
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      await updateProfile(user, { displayName: fullName });
+
+      await setDoc(doc(db, "users", user.uid), {
+        fullName,
+        email,
+        role,
+        createdAt: new Date().toISOString(),
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        setMessage("✅ Registration successful! Please proceed to login.");
-        setIsRegister(false);
-        setEmail("");
-        setPassword("");
-        setFullName("");
-      } else {
-        setMessage(`❌ ${data.detail || "Registration failed"}`);
-      }
+      setMessage("✅ Registration successful! You can now log in.");
+      setIsRegister(false);
     } catch (error) {
       console.error("Registration error:", error);
-      setMessage("❌ An error occurred during registration. Please try again.");
+      let errorMessage = "An error occurred during registration. Please try again.";
+      if (error.code === "auth/email-already-in-use") {
+        errorMessage = "This email is already registered. Please log in or use a different email.";
+      } else if (error.code === "auth/weak-password") {
+        errorMessage = "Password should be at least 6 characters long.";
+      } else if (error.code === "auth/invalid-email") {
+        errorMessage = "Please enter a valid email address.";
+      }
+      setMessage(`❌ ${errorMessage}`);
     } finally {
       setLoading(false);
     }
   };
 
-  // Replace the handleLogin function
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
     setMessage("");
 
     try {
-        const formData = new URLSearchParams();
-        formData.append('username', email);  // OAuth2 expects 'username', not 'email'
-        formData.append('password', password);
-
-        const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Accept': 'application/json'
-            },
-            body: formData
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.detail || 'Login failed');
-        }
-
-        // Store token and user data
-        localStorage.setItem('token', data.access_token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        
-        setMessage("✅ Login successful!");
-        
-        // Short delay before navigation to show success message
-        setTimeout(() => {
-            navigate('/home');
-        }, 500);
-
+      await signInWithEmailAndPassword(auth, email, password);
+      setMessage("✅ Login successful! Redirecting...");
+      setTimeout(() => {
+        navigate("/home");
+      }, 1500);
     } catch (error) {
-        console.error('Login error:', error);
-        setError(error.message);
-        setMessage(`❌ ${error.message}`);
+      console.error("Login error:", error);
+      let errorMessage = "Login failed. Please check your credentials.";
+      if (error.code === "auth/invalid-credential") {
+        errorMessage = "Invalid email or password.";
+      } else if (error.code === "auth/too-many-requests") {
+        errorMessage = "Too many attempts. Please try again later.";
+      }
+      setMessage(`❌ ${errorMessage}`);
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   };
 
@@ -541,25 +522,11 @@ const LoginPage = () => {
                 <form onSubmit={handleLogin} className="auth-form">
                   <div className="input-group">
                     <label htmlFor="email">Email Address</label>
-                    <input 
-                        type="email" 
-                        id="email" 
-                        placeholder="you@example.com" 
-                        value={email} 
-                        onChange={(e) => setEmail(e.target.value)} 
-                        required 
-                    />
+                    <input type="email" id="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
                   </div>
                   <div className="input-group">
                     <label htmlFor="password">Password</label>
-                    <input 
-                        type="password" 
-                        id="password" 
-                        placeholder="••••••••" 
-                        value={password} 
-                        onChange={(e) => setPassword(e.target.value)} 
-                        required 
-                    />
+                    <input type="password" id="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
                   </div>
                   <div className="forgot-password">
                     <a href="#" onClick={handleForgotPassword}>Forgot password?</a>

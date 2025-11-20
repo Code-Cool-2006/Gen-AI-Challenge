@@ -538,57 +538,72 @@ const App = () => {
         </div>
       </section>
 
-      {/* Testimonials Section */}
-      <section className="testimonials" id="pricing"> {/* Added id="pricing" to match nav */}
-        <div className="section-header">
-          <h2>Success Stories</h2>
-          <p>Join thousands who've transformed their business with AI agents</p>
-        </div>
-
-        <div className="testimonials-grid">
-          <div className="testimonial-card">
-            <div className="stars">★★★★★</div>
-            <p>
-              "The AI Agent Economy platform revolutionized how we automate our
-              workflows. Incredible ROI in just 3 months!"
-            </p>
-            <div className="testimonial-author">
-              <div className="author-avatar">JD</div>
-              <div>
-                <div className="author-name">John Davis</div>
-                <div className="author-role">CTO at TechCorp</div>
-              </div>
-            </div>
+       {/* Testimonials */}
+      <section id="testimonials" className="testimonials">
+        <div className="container">
+          <div className="section-header">
+            <h2>Testimonials</h2>
+            <p>Check our Reveiws</p>
           </div>
 
-          <div className="testimonial-card">
-            <div className="stars">★★★★★</div>
-            <p>
-              "Managing multiple AI agents has never been easier. The
-              orchestration features are game-changing for our operations."
-            </p>
-            <div className="testimonial-author">
-              <div className="author-avatar">SL</div>
-              <div>
-                <div className="author-name">Sarah Lee</div>
-                <div className="author-role">
-                  Operations Director at InnovateLabs
+          <div className="testimonials-grid">
+            <div className="testimonial-card">
+              <div className="testimonial-content">
+                <p>
+                  "The CareerAI platform has revolutionized the way our students prepare for their careers."
+                </p>
+              </div>
+              <div className="testimonial-author">
+                <div className="author-avatar">
+                  <img
+                    src="https://img.icons8.com/material-outlined/48/user--v1.png"
+                    alt="Prof.Dr.Tushar Hawal"
+                  />
+                </div>
+                <div className="author-info">
+                  <h4>Dr.Tushar Hawal</h4>
+                  <p> Prof Mechanical Engineering</p>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div className="testimonial-card">
-            <div className="stars">★★★★★</div>
-            <p>
-              "The real-time monitoring and analytics gave us complete
-              visibility into our AI operations. Highly recommended!"
-            </p>
-            <div className="testimonial-author">
-              <div className="author-avatar">MC</div>
-              <div>
-                <div className="author-name">Marcus Chen</div>
-                <div className="author-role">AI Lead at FutureTech</div>
+            <div className="testimonial-card">
+              <div className="testimonial-content">
+                <p>
+                  "Its a great tool for our students to be market ready."
+                </p>
+              </div>
+              <div className="testimonial-author">
+                <div className="author-avatar">
+                  <img
+                    src="https://img.icons8.com/material-outlined/48/user--v1.png"
+                    alt="Vidyadheesh Pandurangi"
+                  />
+                </div>
+                <div className="author-info">
+                  <h4>Vidyadheesh Pandurangi</h4>
+                  <p>Prof Computer Science Eng</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="testimonial-card">
+              <div className="testimonial-content">
+                <p>
+                  "It would be a great tool for our students"
+                </p>
+              </div>
+              <div className="testimonial-author">
+                <div className="author-avatar">
+                  <img
+                    src="https://img.icons8.com/material-outlined/48/user--v1.png" 
+                    alt="Satish Hukkeri"
+                  />
+                </div>
+                <div className="author-info">
+                  <h4>Satish Hukkeri</h4>
+                  <p>Placement & Training Officer</p>
+                </div>
               </div>
             </div>
           </div>
@@ -596,71 +611,9 @@ const App = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="cta-section" id="contact"> {/* Added id="contact" to match nav */}
-        <h2>Ready to Build Your AI Agent Economy?</h2>
-        <p>
-          Join leading companies automating their operations with intelligent
-          agents
-        </p>
-        <button className="btn btn-primary btn-large">
-          Start Your Free Trial
-        </button>
-      </section>
+      
 
-      {/* Footer */}
-      <footer className="footer">
-        <div className="footer-content">
-          <div className="footer-section">
-            <h4>AI Agents</h4>
-            <p>Orchestrating the future of autonomous AI</p>
-          </div>
-          <div className="footer-section">
-            <h4>Product</h4>
-            <ul>
-              <li>
-                <a href="#">Features</a>
-              </li>
-              <li>
-                <a href="#">Pricing</a>
-              </li>
-              <li>
-                <a href="#">Security</a>
-              </li>
-            </ul>
-          </div>
-          <div className="footer-section">
-            <h4>Company</h4>
-            <ul>
-              <li>
-                <a href="#">About</a>
-              </li>
-              <li>
-                <a href="#">Blog</a>
-              </li>
-              <li>
-                <a href="#">Careers</a>
-              </li>
-            </ul>
-          </div>
-          <div className="footer-section">
-            <h4>Legal</h4>
-            <ul>
-              <li>
-                <a href="#">Privacy</a>
-              </li>
-              <li>
-                <a href="#">Terms</a>
-              </li>
-              <li>
-                <a href="#">Contact</a>
-              </li>
-            </ul>
-          </div>
-        </div>
-        <div className="footer-bottom">
-          <p>&copy; 2025 AI Agent Economy. All rights reserved.</p>
-        </div>
-      </footer>
+     
     </>
   );
 };
