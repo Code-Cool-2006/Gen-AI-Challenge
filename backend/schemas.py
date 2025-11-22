@@ -138,3 +138,10 @@ class InterviewFeedbackRequest(BaseModel):
 class InterviewFeedbackResponse(BaseModel):
     session: InterviewSessionSchema
 
+class MarketAnalysisResponse(BaseModel):
+    salary_range: Optional[str] = None
+    demand_level: Optional[str] = None
+    growth_trend: Optional[str] = None
+    key_skills: Optional[List[str]] = []
+    recommendations: Optional[str] = None
+

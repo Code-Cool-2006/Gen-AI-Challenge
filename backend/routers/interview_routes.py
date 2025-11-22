@@ -3,10 +3,14 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List
 
-from ..database import get_db
-from ..models import InterviewSession
-from ..services import gemini_service
-from ..utils.security import get_current_user
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from database import get_db
+from models import InterviewSession
+from services import gemini_service
+from utils.security import get_current_user
 
 router = APIRouter(
     prefix="/api/interview",

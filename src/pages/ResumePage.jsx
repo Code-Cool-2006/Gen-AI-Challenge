@@ -232,7 +232,7 @@ export default function ResumePage() {
   const startResume = () => navigate("/resume-analyze");
   const generateRoadmap = () => navigate("/career-roadmap");
   const startInterview = () => navigate("/mock-interview");
-  const findJobs = () => alert("🎯 Find matching jobs");
+  const findJobs = () => navigate("/job-matching");
   const createPortfolio = () => alert("🌐 Generate portfolio");
 
   const careers = [

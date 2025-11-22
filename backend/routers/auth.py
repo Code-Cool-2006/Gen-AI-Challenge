@@ -3,13 +3,17 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import timedelta
 
-from .. import schemas
-from ..database import get_db
-from ..models import User
-from ..utils.security import (
-    hash_password, 
-    verify_password, 
-    create_access_token, 
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from schemas import *
+from database import get_db
+from models import User
+from utils.security import (
+    hash_password,
+    verify_password,
+    create_access_token,
     ACCESS_TOKEN_EXPIRE_MINUTES
 )
 
@@ -18,8 +22,8 @@ router = APIRouter(
     tags=["Authentication"]
 )
 
-@router.post("/register", response_model=schemas.UserSchema, status_code=status.HTTP_201_CREATED)
-def register_user(user_data: schemas.UserCreate, db: Session = Depends(get_db)):
+@router.post("/register", response_model=UserSchema, status_code=status.HTTP_201_CREATED)
+def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
     existing = db.query(User).filter(User.email == user_data.email).first()
     if existing:
         raise HTTPException(
@@ -41,7 +45,7 @@ def register_user(user_data: schemas.UserCreate, db: Session = Depends(get_db)):
     return new_user
 
 
-@router.post("/login", response_model=schemas.Token)
+@router.post("/login", response_model=Token)
 def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)

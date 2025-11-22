@@ -1,20 +1,24 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from .. import schemas
-from ..services import gemini_service
-from ..database import get_db
-from ..models import User
-from ..utils.security import get_current_user
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from schemas import *
+from services import gemini_service
+from database import get_db
+from models import User
+from utils.security import get_current_user
 
 router = APIRouter(
     prefix="/api/career",
     tags=["Career Path"]
 )
 
-@router.post("/generate-roadmap", response_model=schemas.CareerPathResponse)
+@router.post("/generate-roadmap", response_model=CareerPathResponse)
 async def generate_user_career_roadmap(
-    request: schemas.CareerPathRequest,
+    request: CareerPathRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -48,7 +52,7 @@ async def generate_user_career_roadmap(
                 detail=roadmap_text
             )
 
-        return schemas.CareerPathResponse(roadmap=roadmap_text)
+        return CareerPathResponse(roadmap=roadmap_text)
 
     except HTTPException:
         # Pass FastAPI errors

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import "./CSS/home.css";
 
 const ChatBot = () => {
@@ -11,17 +12,33 @@ const ChatBot = () => {
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  
+  // Ref to store the chat session so it persists across renders
+  const chatSessionRef = useRef(null);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
 
-  // Client no longer calls Google directly; backend proxy handles API keys.
+  // Initialize Gemini SDK
+  const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
+
+  useEffect(() => {
+    // Initialize Chat Session with system instruction
+    const model = genAI.getGenerativeModel({ 
+        model: "gemini-2.5-flash",
+        systemInstruction: "You are a helpful, encouraging Career Counselor and Job Market Expert. Keep answers concise, actionable, and formatted nicely."
+    });
+    
+    chatSessionRef.current = model.startChat({
+      history: [], // Start with empty history
+    });
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   useEffect(() => {
-    // autosize textarea on input
+    // Autosize textarea
     const ta = textareaRef.current;
     if (ta) {
       ta.style.height = "auto";
@@ -41,43 +58,34 @@ const ChatBot = () => {
     const trimmed = input.trim();
     if (!trimmed) return;
 
+    // 1. Add user message to UI
     addMessage("user", trimmed);
     setInput("");
     setLoading(true);
 
     try {
-      // POST to our server-side AI proxy to avoid exposing API keys in client
-      const res = await fetch("/api/ai/chat/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: trimmed,
-        }),
-      });
+        if (!chatSessionRef.current) {
+            throw new Error("Chat session not initialized");
+        }
 
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        console.error("Gemini API returned non-OK response:", res.status, text);
-        addMessage("bot", `⚠️ Gemini API error (status ${res.status})`);
-        setLoading(false);
-        return;
-      }
+        // 2. Send message to Gemini (Client-side)
+        const result = await chatSessionRef.current.sendMessage(trimmed);
+        const response = await result.response;
+        const botText = response.text();
 
-      const data = await res.json();
+        // 3. Add bot response to UI
+        addMessage("bot", botText);
 
-      // The backend returns {response: "bot response"}
-      let botText = data?.response || "⚠️ Sorry, I couldn't get a response.";
-
-      addMessage("bot", botText);
     } catch (error) {
       console.error("Error with Gemini API:", error);
-      addMessage("bot", "⚠️ Server error. Try again later.");
+      addMessage("bot", "⚠️ Connectivity issue. Please check your internet or API Key.");
     } finally {
       setLoading(false);
     }
   };
 
-  const clearChat = () => {
+  const clearChat = async () => {
+    // Reset UI
     setMessages([
       {
         role: "bot",
@@ -86,6 +94,10 @@ const ChatBot = () => {
       },
     ]);
     setInput("");
+
+    // Reset Gemini History
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    chatSessionRef.current = model.startChat({ history: [] });
   };
 
   return (
@@ -93,16 +105,12 @@ const ChatBot = () => {
       {/* Hero Section */}
       <section className="hero" style={{ paddingBottom: "2rem" }}>
         <div className="hero-content">
-          <div
-            className="hero-text"
-            style={{ textAlign: "center", maxWidth: "800px", margin: "0 auto" }}
-          >
+          <div className="hero-text" style={{ textAlign: "center", maxWidth: "800px", margin: "0 auto" }}>
             <h1 className="hero-title">
               Career <span className="gradient-text">Chatbot</span>
             </h1>
             <p className="hero-subtitle">
               Get instant, AI-powered answers to all your career questions.
-              Available 24/7 to guide you on your professional journey.
             </p>
           </div>
         </div>
@@ -120,7 +128,7 @@ const ChatBot = () => {
               boxShadow: "0 10px 40px rgba(0, 0, 0, 0.3)",
             }}
           >
-            {/* Chat Header */}
+            {/* Header */}
             <div
               style={{
                 background: "linear-gradient(135deg, #6366f1 0%, #ec4899 100%)",
@@ -134,17 +142,13 @@ const ChatBot = () => {
               <h3 style={{ margin: 0, fontSize: "1.15rem", fontWeight: 700 }}>
                 💼 Career & Job Market ChatBot
               </h3>
-              <div style={{ display: "flex", gap: "0.5rem" }}>
-                <button className="btn btn-ghost" onClick={clearChat}>
-                  Clear
-                </button>
-              </div>
+              <button className="btn btn-ghost" onClick={clearChat} style={{background: 'rgba(0,0,0,0.2)', border:'none', color:'white', padding:'4px 12px', borderRadius:'4px', cursor:'pointer'}}>
+                Clear
+              </button>
             </div>
 
-            {/* Chat Body */}
+            {/* Body */}
             <div
-              role="log"
-              aria-live="polite"
               style={{
                 height: "540px",
                 overflowY: "auto",
@@ -158,97 +162,59 @@ const ChatBot = () => {
                   style={{
                     display: "flex",
                     marginBottom: "1rem",
-                    justifyContent:
-                      msg.role === "user" ? "flex-end" : "flex-start",
+                    justifyContent: msg.role === "user" ? "flex-end" : "flex-start",
                   }}
                 >
+                  {/* Bot Icon */}
                   {msg.role === "bot" && (
-                    <div
-                      style={{
-                        width: 40,
-                        height: 40,
-                        background: "var(--primary)",
-                        borderRadius: "50%",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        marginRight: "0.75rem",
-                        flexShrink: 0,
-                      }}
-                      aria-hidden
-                    >
-                      🤖
-                    </div>
+                    <div style={{
+                      width: 40, height: 40, background: "var(--primary)",
+                      borderRadius: "50%", display: "flex", alignItems: "center",
+                      justifyContent: "center", marginRight: "0.75rem", flexShrink: 0
+                    }}>🤖</div>
                   )}
 
+                  {/* Message Bubble */}
                   <div
                     style={{
                       maxWidth: "78%",
                       padding: "0.85rem 1rem",
                       borderRadius: 12,
-                      background:
-                        msg.role === "user"
-                          ? "linear-gradient(135deg, #6366f1 0%, #ec4899 100%)"
-                          : "var(--dark-card)",
-                      border:
-                        msg.role === "bot"
-                          ? "1px solid var(--dark-border)"
-                          : "none",
+                      background: msg.role === "user"
+                        ? "linear-gradient(135deg, #6366f1 0%, #ec4899 100%)"
+                        : "var(--dark-card)",
+                      border: msg.role === "bot" ? "1px solid var(--dark-border)" : "none",
                       color: "var(--text-primary)",
                       lineHeight: 1.5,
                       whiteSpace: "pre-wrap",
-                      wordBreak: "break-word",
                     }}
                   >
                     <div style={{ fontSize: "0.95rem" }}>{msg.text}</div>
-                    <div
-                      style={{
-                        fontSize: "0.75rem",
-                        opacity: 0.6,
-                        marginTop: 6,
-                      }}
-                    >
+                    <div style={{ fontSize: "0.75rem", opacity: 0.6, marginTop: 6 }}>
                       {msg.time}
                     </div>
                   </div>
 
+                  {/* User Icon */}
                   {msg.role === "user" && (
-                    <div
-                      style={{
-                        width: 40,
-                        height: 40,
-                        background: "var(--dark-border)",
-                        borderRadius: "50%",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        marginLeft: "0.75rem",
-                        flexShrink: 0,
-                      }}
-                      aria-hidden
-                    >
-                      👤
-                    </div>
+                    <div style={{
+                      width: 40, height: 40, background: "var(--dark-border)",
+                      borderRadius: "50%", display: "flex", alignItems: "center",
+                      justifyContent: "center", marginLeft: "0.75rem", flexShrink: 0
+                    }}>👤</div>
                   )}
                 </div>
               ))}
 
               {loading && (
-                <div
-                  style={{
-                    color: "var(--text-secondary)",
-                    fontSize: "0.95rem",
-                    fontStyle: "italic",
-                  }}
-                >
-                  Bot is typing...
+                <div style={{ color: "var(--text-secondary)", fontSize: "0.95rem", fontStyle: "italic", marginLeft: '3.5rem' }}>
+                  Thinking...
                 </div>
               )}
-
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input Section */}
+            {/* Input Form */}
             <form
               onSubmit={sendMessage}
               style={{
@@ -257,13 +223,7 @@ const ChatBot = () => {
                 background: "var(--dark-card)",
               }}
             >
-              <div
-                style={{
-                  display: "flex",
-                  gap: "0.75rem",
-                  alignItems: "flex-end",
-                }}
-              >
+              <div style={{ display: "flex", gap: "0.75rem", alignItems: "flex-end" }}>
                 <textarea
                   ref={textareaRef}
                   value={input}
@@ -276,7 +236,6 @@ const ChatBot = () => {
                   }}
                   placeholder="Ask about jobs, skills, or careers..."
                   rows={1}
-                  aria-label="Chat message"
                   style={{
                     flex: 1,
                     padding: "0.75rem",
@@ -286,12 +245,10 @@ const ChatBot = () => {
                     color: "var(--text-primary)",
                     fontSize: "1rem",
                     resize: "none",
-                    fontFamily: "inherit",
                     minHeight: 38,
                     maxHeight: 240,
                   }}
                 />
-
                 <button
                   type="submit"
                   disabled={loading || !input.trim()}
@@ -302,43 +259,6 @@ const ChatBot = () => {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      </section>
-
-      {/* Info Section */}
-      <section className="how-it-works">
-        <div className="section-header">
-          <h2>How It Helps</h2>
-          <p>Your 24/7 career companion</p>
-        </div>
-
-        <div className="steps-container">
-          <div className="step">
-            <div className="step-number">💡</div>
-            <h3>Career Guidance</h3>
-            <p>
-              Get personalized advice on career paths, skill development, and
-              job opportunities.
-            </p>
-          </div>
-          <div className="step-arrow">→</div>
-          <div className="step">
-            <div className="step-number">📊</div>
-            <h3>Market Insights</h3>
-            <p>
-              Learn about industry trends, salary expectations, and in-demand
-              skills.
-            </p>
-          </div>
-          <div className="step-arrow">→</div>
-          <div className="step">
-            <div className="step-number">🎯</div>
-            <h3>Job Search Tips</h3>
-            <p>
-              Receive expert tips on resumes, interviews, and landing your dream
-              job.
-            </p>
           </div>
         </div>
       </section>

@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 
 # Load environment variables
 load_dotenv()
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") or os.getenv("VITE_GEMINI_API_KEY")
+GEMINI_API_KEY = os.getenv("VITE_GEMINI_API_KEY")
 
 if not GEMINI_API_KEY:
     raise RuntimeError("❌ GEMINI_API_KEY is missing in .env")
@@ -25,7 +25,7 @@ class MarketInsightsRequest(BaseModel):
 
 # --- Router ---
 router = APIRouter(
-    prefix="/api",
+    prefix="/api/market",
     tags=["Market Insights"]
 )
 

@@ -57,15 +57,12 @@ const App = () => {
       const navbar = document.querySelector(".navbar");
       if (!navbar) return;
       const scrollPercent = window.scrollY / window.innerHeight;
-      const blurAmount = Math.min(scrollPercent * 20, 20);
 
-      navbar.style.background = `rgba(10, 14, 39, ${
-        0.85 + scrollPercent * 0.15
-      })`;
-      navbar.style.backdropFilter = `blur(${10 + blurAmount}px)`;
-      navbar.style.boxShadow = `0 ${4 + blurAmount}px ${20 + blurAmount}px rgba(0, 212, 255, ${
-        0.1 + scrollPercent * 0.2
-      })`;
+      if (scrollPercent > 0.1) {
+        navbar.classList.add("scrolled");
+      } else {
+        navbar.classList.remove("scrolled");
+      }
     };
 
     // Mouse-tracking glow effect in hero section

@@ -9,10 +9,8 @@ load_dotenv()
 
 # -------- DATABASE CONFIG ---------
 
-# Use your MySQL database
-DATABASE_URL = (
-    "mysql+pymysql://root:O-S-N-312@localhost/careerbridge"
-)
+# Use your MySQL database connection string from environment variable
+DATABASE_URL = os.getenv("DATABASE_URL", "mysql+pymysql://root:O-S-N-312@localhost/careerbridge")
 
 # Engine connects SQLAlchemy to MySQL
 engine = create_engine(
@@ -30,7 +28,6 @@ SessionLocal = sessionmaker(
 
 # Base class for models
 Base = declarative_base()
-
 
 # -------- Dependency for FastAPI ---------
 

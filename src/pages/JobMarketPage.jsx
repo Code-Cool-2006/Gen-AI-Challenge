@@ -10,6 +10,7 @@ import {
   Cell,
 } from "recharts";
 import { FaSearch } from "react-icons/fa";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import "./CSS/home.css";
 
 const JobMarketPage = () => {
@@ -17,6 +18,9 @@ const JobMarketPage = () => {
   const [insights, setInsights] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Initialize SDK
+  const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
 
   const handleGetInsights = async () => {
     if (!jobTitle) {
@@ -29,28 +33,36 @@ const JobMarketPage = () => {
     setInsights(null);
 
     try {
-      const response = await fetch("/api/market-insights", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ jobTitle }),
-      });
+      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
-      }
+      const prompt = `
+        Analyze the current job market for the role: "${jobTitle}".
+        Provide the output as a strictly formatted JSON object (no markdown, no code blocks).
+        The JSON must have this exact structure:
+        {
+          "averageSalary": "String (e.g. $80k - $120k or ₹6 LPA - ₹12 LPA)",
+          "demand": "String (e.g. High, Very High, Moderate)",
+          "topSkills": [
+            { "name": "Skill Name", "importance": Integer (0 to 100) },
+            { "name": "Skill Name", "importance": Integer (0 to 100) },
+            { "name": "Skill Name", "importance": Integer (0 to 100) },
+            { "name": "Skill Name", "importance": Integer (0 to 100) },
+            { "name": "Skill Name", "importance": Integer (0 to 100) }
+          ]
+        }
+        Provide 5 to 8 top skills.
+      `;
 
-      const parsedData = await response.json();
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      let text = response.text();
 
-      // Convert importance values to real numbers
-      if (parsedData.topSkills) {
-        parsedData.topSkills = parsedData.topSkills.map(skill => ({
-          ...skill,
-          importance: Number(skill.importance) || 0,
-        }));
-      }
+      // Clean up if AI adds markdown code blocks
+      text = text.replace(/```json/g, "").replace(/```/g, "").trim();
 
-      // Sort skills dynamically by importance
+      const parsedData = JSON.parse(text);
+
+      // Sort skills by importance for better visualization
       if (parsedData.topSkills) {
         parsedData.topSkills = parsedData.topSkills.sort(
           (a, b) => b.importance - a.importance
@@ -59,24 +71,16 @@ const JobMarketPage = () => {
 
       setInsights(parsedData);
     } catch (err) {
-      console.error("API call failed:", err);
-      setError(err.message || "Something went wrong while fetching insights.");
+      console.error("AI Generation failed:", err);
+      setError("Failed to fetch market insights. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
 
   const barColors = [
-    "#8884d8",
-    "#82ca9d",
-    "#ffc658",
-    "#ff8042",
-    "#0088fe",
-    "#00c49f",
-    "#ffbb28",
-    "#d0ed57",
-    "#a4de6c",
-    "#f06292",
+    "#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#0088fe",
+    "#00c49f", "#ffbb28", "#d0ed57", "#a4de6c", "#f06292",
   ];
 
   return (
@@ -89,8 +93,7 @@ const JobMarketPage = () => {
               Job Market <span className="gradient-text">Insights</span>
             </h1>
             <p className="hero-subtitle">
-              Get real-time data on salary trends, market demand, and top skills 
-              for any career. Make informed decisions about your future.
+              Get real-time AI-analyzed data on salary trends, demand, and skills.
             </p>
           </div>
         </div>
@@ -110,7 +113,7 @@ const JobMarketPage = () => {
               📊 Analyze Job Market Data
             </h2>
             <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '2rem' }}>
-              Enter a job title to discover salary ranges, demand levels, and required skills
+              Enter a job title to generate live market data using AI.
             </p>
 
             {/* Input + Button */}
@@ -119,7 +122,7 @@ const JobMarketPage = () => {
                 type="text"
                 value={jobTitle}
                 onChange={(e) => setJobTitle(e.target.value)}
-                placeholder="Enter Job Title (e.g., UX Designer)"
+                placeholder="Enter Job Title (e.g., React Developer)"
                 style={{
                   flex: 1,
                   maxWidth: '500px',
@@ -154,7 +157,7 @@ const JobMarketPage = () => {
               </p>
             )}
 
-            {/* Insights */}
+            {/* Insights Display */}
             {insights && (
               <div style={{ marginTop: '2rem', animation: 'fadeIn 0.6s ease' }}>
                 <div style={{ 
@@ -163,52 +166,34 @@ const JobMarketPage = () => {
                   gap: '1.5rem', 
                   marginBottom: '2rem' 
                 }}>
+                  {/* Salary Card */}
                   <div style={{
-                    background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(99, 102, 241, 0.05))',
+                    background: 'rgba(99, 102, 241, 0.05)',
                     padding: '1.5rem',
                     borderRadius: '12px',
                     border: '1px solid var(--primary)',
                     textAlign: 'center'
                   }}>
-                    <h3 style={{ 
-                      fontSize: '1rem', 
-                      fontWeight: '600', 
-                      color: 'var(--text-secondary)',
-                      marginBottom: '0.5rem'
-                    }}>
-                      Average Salary
+                    <h3 style={{ fontSize: '1rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                      Estimated Salary Range
                     </h3>
-                    <p style={{ 
-                      fontSize: '1.75rem', 
-                      fontWeight: '700',
-                      background: 'var(--gradient)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      backgroundClip: 'text'
-                    }}>
+                    <p style={{ fontSize: '1.5rem', fontWeight: '700', color: '#fff' }}>
                       {insights.averageSalary}
                     </p>
                   </div>
+
+                  {/* Demand Card */}
                   <div style={{
-                    background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05))',
+                    background: 'rgba(16, 185, 129, 0.05)',
                     padding: '1.5rem',
                     borderRadius: '12px',
                     border: '1px solid #10b981',
                     textAlign: 'center'
                   }}>
-                    <h3 style={{ 
-                      fontSize: '1rem', 
-                      fontWeight: '600', 
-                      color: 'var(--text-secondary)',
-                      marginBottom: '0.5rem'
-                    }}>
+                    <h3 style={{ fontSize: '1rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
                       Market Demand
                     </h3>
-                    <p style={{ 
-                      fontSize: '1.75rem', 
-                      fontWeight: '700',
-                      color: '#10b981'
-                    }}>
+                    <p style={{ fontSize: '1.5rem', fontWeight: '700', color: '#10b981' }}>
                       {insights.demand}
                     </p>
                   </div>
@@ -221,18 +206,10 @@ const JobMarketPage = () => {
                   borderRadius: '12px',
                   border: '1px solid var(--dark-border)'
                 }}>
-                  <h3 style={{ 
-                    fontSize: '1.5rem', 
-                    fontWeight: '700', 
-                    textAlign: 'center', 
-                    marginBottom: '1.5rem'
-                  }}>
+                  <h3 style={{ fontSize: '1.5rem', fontWeight: '700', textAlign: 'center', marginBottom: '1.5rem' }}>
                     Top Skills by Importance
                   </h3>
-                  <div style={{
-                    width: '100%',
-                    height: insights.topSkills.length * 60
-                  }}>
+                  <div style={{ width: '100%', height: insights.topSkills.length * 60 }}>
                     <ResponsiveContainer>
                       <BarChart
                         data={insights.topSkills}
@@ -245,7 +222,7 @@ const JobMarketPage = () => {
                         <YAxis
                           type="category"
                           dataKey="name"
-                          width={220}
+                          width={150}
                           tick={{ fontSize: 14, fill: 'var(--text-primary)' }}
                         />
                         <Tooltip 
@@ -253,16 +230,12 @@ const JobMarketPage = () => {
                           contentStyle={{
                             background: 'var(--dark-card)',
                             border: '1px solid var(--dark-border)',
-                            borderRadius: '8px',
                             color: 'var(--text-primary)'
                           }}
                         />
-                        <Bar dataKey="importance" barSize={22} radius={[5, 5, 5, 5]}>
+                        <Bar dataKey="importance" barSize={20} radius={[0, 5, 5, 0]}>
                           {insights.topSkills.map((entry, index) => (
-                            <Cell
-                              key={`cell-${index}`}
-                              fill={barColors[index % barColors.length]}
-                            />
+                            <Cell key={`cell-${index}`} fill={barColors[index % barColors.length]} />
                           ))}
                         </Bar>
                       </BarChart>
@@ -271,40 +244,6 @@ const JobMarketPage = () => {
                 </div>
               </div>
             )}
-          </div>
-        </div>
-      </section>
-
-      {/* Info Section */}
-      <section className="how-it-works">
-        <div className="section-header">
-          <h2>Why Job Market Insights Matter</h2>
-          <p>Make data-driven career decisions</p>
-        </div>
-
-        <div className="steps-container">
-          <div className="step">
-            <div className="step-number">💰</div>
-            <h3>Know Your Worth</h3>
-            <p>
-              Understand salary ranges and negotiate with confidence based on real market data.
-            </p>
-          </div>
-          <div className="step-arrow">→</div>
-          <div className="step">
-            <div className="step-number">📈</div>
-            <h3>Identify Trends</h3>
-            <p>
-              Spot growing industries and high-demand roles before the competition.
-            </p>
-          </div>
-          <div className="step-arrow">→</div>
-          <div className="step">
-            <div className="step-number">🎯</div>
-            <h3>Focus Learning</h3>
-            <p>
-              Prioritize skills that matter most to employers in your target role.
-            </p>
           </div>
         </div>
       </section>

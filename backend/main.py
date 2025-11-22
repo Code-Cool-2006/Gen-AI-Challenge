@@ -4,8 +4,18 @@ load_dotenv()
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from .database import engine, Base  # Assuming you have database.py
-from .routers import auth, user, profile_routes, career_path_routes, interview_routes, job_market, review_resume, chatbot # Assuming all these router files exist
+from database import engine, Base  # Assuming you have database.py
+from routers.auth import router as auth_router
+from routers.user import router as user_router
+from routers.profile_routes import router as profile_routes_router
+from routers.career_path_routes import router as career_path_routes_router
+from routers.interview_routes import router as interview_routes_router
+from routers.job_market import router as job_market_router
+from routers.review_resume import router as review_resume_router
+from routers.chatbot import router as chatbot_router
+from routers.skill_job_matching import router as skill_job_matching_router
+from routers.job_matching import router as job_matching_router
+from routers.market_analysis import router as market_analysis_router
 
 # Configure logging to see server status in the terminal
 logging.basicConfig(level=logging.INFO)
@@ -61,14 +71,23 @@ app.add_middleware(
 # --- Include All Routers ---
 # This adds all the API endpoints from your different feature files to the main app.
 logger.info("Including API routers...")
-app.include_router(auth.router)
-app.include_router(user.router)
-app.include_router(profile_routes.router)
-app.include_router(career_path_routes.router)
-app.include_router(interview_routes.router)
-app.include_router(job_market.router)
-app.include_router(review_resume.router) # Assuming you have a review_resume.py router
-app.include_router(chatbot.router)
+app.include_router(auth_router)
+app.include_router(user_router)
+app.include_router(profile_routes_router)
+app.include_router(career_path_routes_router)
+app.include_router(interview_routes_router)
+app.include_router(job_market_router)
+app.include_router(review_resume_router) # Assuming you have a review_resume.py router
+app.include_router(chatbot_router)
+app.include_router(skill_job_matching_router)
+app.include_router(job_matching_router)
+app.include_router(market_analysis_router)
+
+# Remove the incorrect alias function because APIRouter object has no such attribute.
+# Instead, rely on the /market-insights route registered in market_analysis_router directly.
+
+# The market_analysis_router is already included:
+app.include_router(market_analysis_router)
 logger.info("All routers included successfully.")
 
 

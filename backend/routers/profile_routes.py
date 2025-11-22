@@ -3,10 +3,14 @@ from sqlalchemy.orm import Session
 from sqlalchemy.inspection import inspect
 from typing import List
 
-from .. import schemas
-from ..database import get_db
-from ..models import User, Skill, Project, Experience, Education
-from ..utils.security import get_current_user
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from schemas import SkillBase, SkillSchema, ProjectBase, ProjectSchema, ExperienceBase, ExperienceSchema, EducationBase, EducationSchema
+from database import get_db
+from models import User, Skill, Project, Experience, Education
+from utils.security import get_current_user
 
 # ------------------------------------------------------------
 # Router Setup
@@ -47,8 +51,8 @@ def get_profile_item(db: Session, model, item_id: int, user_id: int):
 # SKILLS — CRUD
 # ------------------------------------------------------------
 
-@router.post("/skills", response_model=schemas.SkillSchema, status_code=status.HTTP_201_CREATED)
-def add_skill(skill_data: schemas.SkillBase, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+@router.post("/skills", response_model=SkillSchema, status_code=status.HTTP_201_CREATED)
+def add_skill(skill_data: SkillBase, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     new_skill = Skill(**skill_data.model_dump(), user_id=current_user.user_id)
     db.add(new_skill)
     db.commit()
@@ -56,8 +60,8 @@ def add_skill(skill_data: schemas.SkillBase, db: Session = Depends(get_db), curr
     return new_skill
 
 
-@router.put("/skills/{skill_id}", response_model=schemas.SkillSchema)
-def update_skill(skill_id: int, skill_data: schemas.SkillBase, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+@router.put("/skills/{skill_id}", response_model=SkillSchema)
+def update_skill(skill_id: int, skill_data: SkillBase, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     skill = get_profile_item(db, Skill, skill_id, current_user.user_id)
     skill.skill_name = skill_data.skill_name
     skill.proficiency = skill_data.proficiency
@@ -79,8 +83,8 @@ def delete_skill(skill_id: int, db: Session = Depends(get_db), current_user: Use
 # PROJECTS — CRUD
 # ------------------------------------------------------------
 
-@router.post("/projects", response_model=schemas.ProjectSchema, status_code=status.HTTP_201_CREATED)
-def add_project(project_data: schemas.ProjectBase, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+@router.post("/projects", response_model=ProjectSchema, status_code=status.HTTP_201_CREATED)
+def add_project(project_data: ProjectBase, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     new_project = Project(**project_data.model_dump(), user_id=current_user.user_id)
     db.add(new_project)
     db.commit()
@@ -88,8 +92,8 @@ def add_project(project_data: schemas.ProjectBase, db: Session = Depends(get_db)
     return new_project
 
 
-@router.put("/projects/{project_id}", response_model=schemas.ProjectSchema)
-def update_project(project_id: int, project_data: schemas.ProjectBase, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+@router.put("/projects/{project_id}", response_model=ProjectSchema)
+def update_project(project_id: int, project_data: ProjectBase, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     project = get_profile_item(db, Project, project_id, current_user.user_id)
 
     for field, value in project_data.model_dump().items():
@@ -112,8 +116,8 @@ def delete_project(project_id: int, db: Session = Depends(get_db), current_user:
 # EXPERIENCE — CRUD
 # ------------------------------------------------------------
 
-@router.post("/experience", response_model=schemas.ExperienceSchema, status_code=status.HTTP_201_CREATED)
-def add_experience(exp_data: schemas.ExperienceBase, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+@router.post("/experience", response_model=ExperienceSchema, status_code=status.HTTP_201_CREATED)
+def add_experience(exp_data: ExperienceBase, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     new_exp = Experience(**exp_data.model_dump(), user_id=current_user.user_id)
     db.add(new_exp)
     db.commit()
@@ -121,8 +125,8 @@ def add_experience(exp_data: schemas.ExperienceBase, db: Session = Depends(get_d
     return new_exp
 
 
-@router.put("/experience/{exp_id}", response_model=schemas.ExperienceSchema)
-def update_experience(exp_id: int, exp_data: schemas.ExperienceBase, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+@router.put("/experience/{exp_id}", response_model=ExperienceSchema)
+def update_experience(exp_id: int, exp_data: ExperienceBase, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     exp = get_profile_item(db, Experience, exp_id, current_user.user_id)
 
     for field, value in exp_data.model_dump().items():
@@ -145,8 +149,8 @@ def delete_experience(exp_id: int, db: Session = Depends(get_db), current_user: 
 # EDUCATION — CRUD
 # ------------------------------------------------------------
 
-@router.post("/education", response_model=schemas.EducationSchema, status_code=status.HTTP_201_CREATED)
-def add_education(edu_data: schemas.EducationBase, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+@router.post("/education", response_model=EducationSchema, status_code=status.HTTP_201_CREATED)
+def add_education(edu_data: EducationBase, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     new_edu = Education(**edu_data.model_dump(), user_id=current_user.user_id)
     db.add(new_edu)
     db.commit()
@@ -154,8 +158,8 @@ def add_education(edu_data: schemas.EducationBase, db: Session = Depends(get_db)
     return new_edu
 
 
-@router.put("/education/{edu_id}", response_model=schemas.EducationSchema)
-def update_education(edu_id: int, edu_data: schemas.EducationBase, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+@router.put("/education/{edu_id}", response_model=EducationSchema)
+def update_education(edu_id: int, edu_data: EducationBase, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     edu = get_profile_item(db, Education, edu_id, current_user.user_id)
 
     for field, value in edu_data.model_dump().items():

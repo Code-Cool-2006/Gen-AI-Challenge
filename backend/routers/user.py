@@ -2,10 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
-from ..database import get_db
-from ..models import User
-from .. import schemas
-from ..utils.security import verify_token
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from database import get_db
+from models import User
+from schemas import UserSchema
+from utils.security import verify_token
 
 # -----------------------------------------------------------
 # Router Setup
@@ -51,7 +55,7 @@ def get_current_user(
 # Routes
 # -----------------------------------------------------------
 
-@router.get("/me", response_model=schemas.UserSchema)
+@router.get("/me", response_model=UserSchema)
 def read_users_me(current_user: User = Depends(get_current_user)):
     """
     Returns the profile of the currently logged-in user.

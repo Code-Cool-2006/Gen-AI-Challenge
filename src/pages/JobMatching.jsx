@@ -1,213 +1,158 @@
 import React, { useState } from "react";
+import { GoogleGenerativeAI } from "@google/generative-ai"; // Direct SDK usage
+import Navbar from '../components/Navbar/Navbar';
+import Footer from '../components/Footer/Footer';
+import '../styles/main.css';
 
-export default function JobMatching() {
-  const [skills, setSkills] = useState("");
-  const [results, setResults] = useState(null);
+export default function SkillJobMatching() {
+  // 1. State Management
+  const [jobDescription, setJobDescription] = useState("");
+  const [resumeText, setResumeText] = useState("");
+  const [matchResult, setMatchResult] = useState(""); 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const handleSubmit = async (e) => {
+  // 2. The AI Logic (Directly calls Gemini from Browser)
+  const handleMatchRequest = async (e) => {
     e.preventDefault();
+    
+    // Basic Validation
+    if (!jobDescription || !resumeText) {
+      setError("Please provide both a Job Description and Resume text.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
+    setMatchResult("");
 
     try {
-      const response = await fetch("http://localhost:8000/api/skill-job-matching/analyze", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          skills: skills.split(",").map(skill => skill.trim()).filter(skill => skill.length > 0),
-        }),
-      });
+      // A. Initialize the API client
+      // Make sure your .env file has VITE_GEMINI_API_KEY=your_key_here
+      const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
+      
+      // B. Select the correct model (CHANGED from 2.5 to 1.5-flash)
+      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-      if (!response.ok) {
-        throw new Error("Failed to analyze skills");
-      }
+      // C. Construct the Prompt
+      const prompt = `
+        Act as an expert Applicant Tracking System (ATS) and Hiring Manager.
+        
+        I will provide a Job Description and a Resume.
+        Analyze the match and provide the output in this strict format:
+        
+        1. **Match Score**: (Give a percentage, e.g., 75%)
+        2. **Key Missing Skills**: List skills present in JD but missing in Resume.
+        3. **Matching Strengths**: List skills that match well.
+        4. **Actionable Advice**: 3 bullet points on how to tailor the resume for this specific job.
 
-      const data = await response.json();
-      setResults(data);
+        JOB DESCRIPTION:
+        ${jobDescription}
+
+        RESUME:
+        ${resumeText}
+      `;
+
+      // D. Generate Content
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+
+      setMatchResult(text);
+
     } catch (err) {
-      setError(err.message);
+      console.error("AI Error:", err);
+      setError("Failed to analyze. Check your API Key or Internet Connection.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-4xl font-bold text-center mb-8 text-primary">
-        Find Jobs That Match Your Skills
-      </h1>
-      <p className="text-center text-muted-foreground mb-8 max-w-2xl mx-auto">
-        Enter your skills below and get personalized job recommendations based on your expertise and experience.
-      </p>
+    <div className="d-flex flex-column min-vh-100">
+      <Navbar />
+      
+      <div className="container my-5 grow">
+        <h1 className="fw-bold mb-3 text-white">AI Job Matching</h1>
+        <p className="text-light mb-4">
+          Paste a job description and your resume to get a detailed compatibility
+          analysis and actionable advice.
+        </p>
+        
+        <div className="row g-4 grow">
+          {/* Input Area */}
+          <div className="col-md-6">
+            <div className="card bg-secondary text-white shadow-sm h-100">
+              <div className="card-body">
+                <label className="form-label fw-bold">Job Description</label>
+                <textarea
+                  className="form-control mb-3 bg-dark text-white border-light"
+                  rows="6"
+                  placeholder="Paste the job description here..."
+                  value={jobDescription}
+                  onChange={(e) => setJobDescription(e.target.value)}
+                />
+                
+                <label className="form-label fw-bold">Your Resume</label>
+                <textarea
+                  className="form-control mb-3 bg-dark text-white border-light"
+                  rows="6"
+                  placeholder="Paste your resume text here..."
+                  value={resumeText}
+                  onChange={(e) => setResumeText(e.target.value)}
+                />
 
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-card-background border border-secondary rounded-lg p-6 mb-8">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="skills" className="block text-sm font-medium mb-2">
-                Your Skills (comma-separated)
-              </label>
-              <textarea
-                id="skills"
-                value={skills}
-                onChange={(e) => setSkills(e.target.value)}
-                placeholder="e.g., Python, JavaScript, React, SQL, Machine Learning, Data Analysis"
-                className="w-full px-3 py-2 border border-secondary rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-input text-foreground"
-                rows={4}
-                required
-              />
+                {error && <div className="alert alert-danger">{error}</div>}
+                
+                <button
+                  onClick={handleMatchRequest}
+                  disabled={loading}
+                  className="btn btn-primary w-100 fw-bold mt-2"
+                >
+                  {loading ? (
+                    <span>
+                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                      Analyzing...
+                    </span>
+                  ) : "🔍 Analyze Match"}
+                </button>
+              </div>
             </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-primary text-primary-foreground py-2 px-4 rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground"></div>
-                  Analyzing Skills...
-                </>
-              ) : (
-                "Find Matching Jobs"
-              )}
-            </button>
-          </form>
+          </div>
+
+          {/* Analysis Display Area */}
+          <div className="col-md-6">
+            <div className="card bg-secondary text-white shadow-sm h-100">
+              <div className="card-body">
+                <h4 className="fw-bold mb-3 text-white border-bottom pb-2">Analysis Result</h4>
+                
+                {loading && (
+                   <div className="text-center py-5">
+                      <div className="spinner-border text-primary" role="status">
+                        <span className="visually-hidden">Loading...</span>
+                      </div>
+                      <p className="mt-2">Consulting Gemini AI...</p>
+                   </div>
+                )}
+
+                {!loading && matchResult && (
+                  <div className="analysis-content p-3 bg-dark rounded border border-light" style={{whiteSpace: 'pre-wrap', lineHeight: '1.6'}}>
+                    {matchResult}
+                  </div>
+                )}
+
+                {!loading && !matchResult && (
+                  <div className="text-center py-5 text-white-50">
+                    <p>Results will appear here after analysis.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
-
-        {error && (
-          <div className="mt-4 p-4 bg-destructive/10 border border-destructive rounded-md">
-            <p className="text-destructive">{error}</p>
-          </div>
-        )}
-
-        {results && (
-          <div className="mt-8 space-y-8">
-            {/* Skill Analysis */}
-            <div className="bg-card-background border border-secondary rounded-lg p-6">
-              <h2 className="text-2xl font-bold mb-4 text-primary">Skill Analysis</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <h3 className="font-semibold mb-2">Identified Skills</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {results.skillAnalysis.identifiedSkills.map((skill, index) => (
-                      <span
-                        key={index}
-                        className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm"
-                      >
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <h3 className="font-semibold mb-2">Career Level</h3>
-                  <p className="text-muted-foreground">{results.skillAnalysis.careerLevel}</p>
-                  <h3 className="font-semibold mb-2 mt-4">Skill Level</h3>
-                  <p className="text-muted-foreground">{results.skillAnalysis.skillLevel}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Job Suggestions */}
-            <div className="bg-card-background border border-secondary rounded-lg p-6">
-              <h2 className="text-2xl font-bold mb-4 text-primary">Job Suggestions</h2>
-              <div className="space-y-4">
-                {results.suggestedJobs.map((job, index) => (
-                  <div key={index} className="border border-secondary rounded-lg p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="text-lg font-semibold">{job.title}</h3>
-                      <span className="bg-primary text-primary-foreground px-2 py-1 rounded text-sm">
-                        {job.matchScore}% Match
-                      </span>
-                    </div>
-                    <p className="text-muted-foreground mb-2">{job.company} • {job.location}</p>
-                    <p className="text-sm mb-3">{job.description}</p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <h4 className="font-semibold mb-1">Salary Range</h4>
-                        <p className="text-muted-foreground">{job.salaryRange}</p>
-                      </div>
-                      <div>
-                        <h4 className="font-semibold mb-1">Matching Skills</h4>
-                        <div className="flex flex-wrap gap-1">
-                          {job.matchingSkills.map((skill, skillIndex) => (
-                            <span
-                              key={skillIndex}
-                              className="px-2 py-1 bg-success/10 text-success rounded text-xs"
-                            >
-                              {skill}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                      <div>
-                        <h4 className="font-semibold mb-1">Skills to Learn</h4>
-                        <div className="flex flex-wrap gap-1">
-                          {job.skillsToLearn.map((skill, skillIndex) => (
-                            <span
-                              key={skillIndex}
-                              className="px-2 py-1 bg-warning/10 text-warning rounded text-xs"
-                            >
-                              {skill}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                      <div>
-                        <h4 className="font-semibold mb-1">Why This Match</h4>
-                        <p className="text-muted-foreground text-xs">{job.whyMatch}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Career Paths */}
-            <div className="bg-card-background border border-secondary rounded-lg p-6">
-              <h2 className="text-2xl font-bold mb-4 text-primary">Career Paths</h2>
-              <div className="space-y-4">
-                {results.careerPaths.map((path, index) => (
-                  <div key={index} className="border border-secondary rounded-lg p-4">
-                    <h3 className="text-lg font-semibold mb-2">{path.careerField}</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                      <div>
-                        <h4 className="font-semibold mb-1">Entry Level</h4>
-                        <p className="text-muted-foreground">{path.entryLevelPosition}</p>
-                      </div>
-                      <div>
-                        <h4 className="font-semibold mb-1">Mid Level</h4>
-                        <p className="text-muted-foreground">{path.midLevelPosition}</p>
-                      </div>
-                      <div>
-                        <h4 className="font-semibold mb-1">Senior Level</h4>
-                        <p className="text-muted-foreground">{path.seniorLevelPosition}</p>
-                      </div>
-                    </div>
-                    <div className="mt-4">
-                      <h4 className="font-semibold mb-1">Required Skills</h4>
-                      <div className="flex flex-wrap gap-1">
-                        {path.requiredSkills.map((skill, skillIndex) => (
-                          <span
-                            key={skillIndex}
-                            className="px-2 py-1 bg-info/10 text-info rounded text-xs"
-                          >
-                            {skill}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
       </div>
+
+      <Footer />
     </div>
   );
 }

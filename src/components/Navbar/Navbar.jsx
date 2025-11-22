@@ -10,23 +10,13 @@ function Navbar() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const handleScroll = () => {
-      const isScrolled = window.scrollY > 10;
-      if (isScrolled !== scrolled) {
-        setScrolled(isScrolled);
-      }
-    };
-
     const checkLoginStatus = () => {
       const token = localStorage.getItem("token");
       setIsLoggedIn(!!token);
     };
 
-    window.addEventListener("scroll", handleScroll);
     checkLoginStatus();
-
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [scrolled]);
+  }, []);
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
@@ -46,10 +36,10 @@ function Navbar() {
   return (
     <nav className={`navbar ${scrolled ? "scrolled" : ""}`}>
       <div className="navbar-container">
-        <div className="logo">
+        <Link to="/home" className="navbar-logo">
           <span className="logo-text">Career</span>
           <span className="logo-text gradient">AI</span>
-        </div>
+        </Link>
 
         <div className="menu-icon" onClick={toggleMenu}>
           {isOpen ? <FaTimes /> : <FaBars />}
