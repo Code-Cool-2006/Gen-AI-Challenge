@@ -175,7 +175,7 @@ function About() {
             <div className="testimonial-author">
               <div className="author-avatar">HD</div>
               <div>
-                <div className="author-name">Hrishikash Desai</div>
+                <div className="author-name">Hrishikesh Desai</div>
                 <div className="author-role">Data Scrapper</div>
               </div>
             </div>
