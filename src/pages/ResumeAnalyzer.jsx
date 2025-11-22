@@ -24,39 +24,39 @@ const LoadingSpinner = () => (
 // Simple Markdown Renderer
 const SimpleMarkdownRenderer = ({ text }) => {
   return (
-    <div className="text-start text-secondary">
+    <div className="text-start text-white">
       {text.split("\n").map((line, index) => {
         if (line.startsWith("### ")) {
           return (
-            <h5 key={index} className="fw-bold text-dark mt-3 mb-2">
+            <h5 key={index} className="fw-bold text-primary mt-3 mb-2">
               {line.substring(4)}
             </h5>
           );
         }
         if (line.startsWith("## ")) {
           return (
-            <h4 key={index} className="fw-bold text-dark mt-3 mb-2">
+            <h4 key={index} className="fw-bold text-primary mt-3 mb-2">
               {line.substring(3)}
             </h4>
           );
         }
         if (line.startsWith("# ")) {
           return (
-            <h3 key={index} className="fw-bold text-dark mt-3 mb-2">
+            <h3 key={index} className="fw-bold text-primary mt-3 mb-2">
               {line.substring(2)}
             </h3>
           );
         }
         if (line.match(/^\s*-\s/)) {
           return (
-            <li key={index} className="ms-3">
+            <li key={index} className="ms-3 text-light">
               {line.replace(/^\s*-\s/, "")}
             </li>
           );
         }
         if (line.match(/^\s*\*\s/)) {
           return (
-            <li key={index} className="ms-3">
+            <li key={index} className="ms-3 text-light">
               {line.replace(/^\s*\*\s/, "")}
             </li>
           );
@@ -64,7 +64,7 @@ const SimpleMarkdownRenderer = ({ text }) => {
         if (line.trim() === "") {
           return <br key={index} />;
         }
-        return <p key={index}>{line}</p>;
+        return <p key={index} className="text-white">{line}</p>;
       })}
     </div>
   );
@@ -109,6 +109,7 @@ export default function ResumeReviewPage({ studentProfile }) {
         systemInstruction: `You are an expert career coach and recruiter specializing in helping students from Tier 2/3 colleges land jobs at top companies.
 Your feedback must be constructive, encouraging, and highly actionable.
 Analyze the resume for ATS compatibility, impact metrics, action verbs, and clarity.
+Based on the resume, suggest the most suitable career path and specific job titles.
 Provide feedback in simple markdown format.`,
       });
 
@@ -138,7 +139,15 @@ Provide a review with the following structure:
 ### Actionable Feedback (Bulleted List)
 - Point 1
 - Point 2
-- Point 3`;
+- Point 3
+
+### Suggested Career & Jobs
+- **Suggested Career Path:** [e.g., Software Engineer, Data Analyst, Product Manager]
+- **Confidence Score:** [e.g., 85%]
+- **Top 3 Job Titles:**
+  - [Job Title 1]
+  - [Job Title 2]
+  - [Job Title 3]`;
 
       // Race between the API call and timeout
       const result = await Promise.race([
@@ -171,19 +180,19 @@ Provide a review with the following structure:
   };
 
   return (
-    <div className="container my-5">
-      <h1 className="fw-bold mb-3">AI Resume Review</h1>
-      <p className="text-muted mb-4">
+    <div className="container my-5 bg-dark text-white">
+      <h1 className="fw-bold mb-3 text-white">AI Resume Review</h1>
+      <p className="text-light mb-4">
         Paste your resume below and get instant, actionable feedback to improve
         it.
       </p>
       <div className="row g-4">
         {/* Resume Input Area */}
         <div className="col-md-6">
-          <div className="card shadow-sm">
+          <div className="card bg-secondary text-white shadow-sm">
             <div className="card-body">
               <textarea
-                className="form-control mb-3"
+                className="form-control mb-3 bg-dark text-white border-light"
                 rows="15"
                 placeholder="Paste your full resume text here..."
                 value={resumeText}
@@ -203,15 +212,15 @@ Provide a review with the following structure:
 
         {/* AI Feedback Display Area */}
         <div className="col-md-6">
-          <div className="card shadow-sm">
+          <div className="card bg-secondary text-white shadow-sm">
             <div className="card-body">
-              <h4 className="fw-bold mb-3">Feedback</h4>
+              <h4 className="fw-bold mb-3 text-white">Feedback</h4>
               {isGenerating && <LoadingSpinner />}
               {feedback ? (
                 <SimpleMarkdownRenderer text={feedback} />
               ) : (
                 !isGenerating && (
-                  <p className="text-muted">Your feedback will appear here.</p>
+                  <p className="text-light">Your feedback will appear here.</p>
                 )
               )}
             </div>

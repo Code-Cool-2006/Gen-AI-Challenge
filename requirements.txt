@@ -9,3 +9,5 @@ python-jose[cryptography]
 litellm
 python-multipart
 google-generativeai
+python-dotenv
+uvicorn

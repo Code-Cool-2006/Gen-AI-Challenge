@@ -357,7 +357,7 @@ export default function MockInterview() {
 
   const getProgressClass = (score) => {
     if (score >= 80) return "bg-success";
-    if (score >= 60) return "bg-warning";
+    if (score >= 60) return "bg-primary";
     return "bg-destructive";
   };
 
@@ -376,7 +376,7 @@ export default function MockInterview() {
   };
 
   const getReadinessData = (score) => {
-    if (score >= 71) {
+    if (score >= 66) {
       return {
         title: "Interview Ready! 🎉",
         strengths: [
@@ -391,7 +391,7 @@ export default function MockInterview() {
         roadmap:
           "You're well-prepared! Focus on company research and prepare thoughtful questions for the interviewer.",
       };
-    } else if (score >= 41) {
+    } else if (score >= 33) {
       return {
         title: "Getting There! 💪",
         strengths: [
@@ -508,7 +508,7 @@ export default function MockInterview() {
               <h1 className="display-4 fw-bold mb-4 text-primary">
                 Mock Interview Simulator
               </h1>
-              <p className="lead mb-5 text-secondary">
+              <p className="lead mb-5 text-light">
                 Practice interviews. Get AI-backed feedback. Boost confidence.
               </p>
 
@@ -555,7 +555,7 @@ export default function MockInterview() {
 
               <div className="row row-cols-1 row-cols-md-3 g-4">
                 <div className="col">
-                  <div className="card bg-secondary bg-opacity-10 border-0 h-100 p-3">
+                  <div className="card bg-card-background border-secondary h-100 p-3">
                     <h4 className="card-title text-primary d-flex align-items-center gap-2">
                       <i className="fas fa-target"></i> Skills Mapping
                     </h4>
@@ -566,7 +566,7 @@ export default function MockInterview() {
                   </div>
                 </div>
                 <div className="col">
-                  <div className="card bg-secondary bg-opacity-10 border-0 h-100 p-3">
+                  <div className="card bg-card-background border-secondary h-100 p-3">
                     <h4 className="card-title text-primary d-flex align-items-center gap-2">
                       <i className="fas fa-brain"></i> Real-Time Feedback
                     </h4>
@@ -577,7 +577,7 @@ export default function MockInterview() {
                   </div>
                 </div>
                 <div className="col">
-                  <div className="card bg-secondary bg-opacity-10 border-0 h-100 p-3">
+                  <div className="card bg-card-background border-secondary h-100 p-3">
                     <h4 className="card-title text-primary d-flex align-items-center gap-2">
                       <i className="fas fa-sparkles"></i> AI Insights
                     </h4>
@@ -627,9 +627,7 @@ export default function MockInterview() {
                   style={{ height: "8px" }}
                 >
                   <div
-                    className={`progress-bar ${getProgressClass(
-                      confidenceScore
-                    )}`}
+                    className="progress-bar bg-primary"
                     style={{
                       width: `${
                         (currentQuestionIndex / totalQuestions) * 100
@@ -723,7 +721,7 @@ export default function MockInterview() {
                               <div
                                 className={`p-3 rounded ${
                                   msg.isAI
-                                    ? "bg-light text-dark"
+                                    ? "bg-secondary text-white"
                                     : "bg-primary text-white"
                                 }`}
                               >
@@ -790,7 +788,7 @@ export default function MockInterview() {
                   </div>
                 </div>
 
-                <div className="flex flex-col w-full h-full space-y-6 lg:w-1/3 feedback-section">
+                <div className="flex flex-col w-full space-y-6 lg:w-1/3 feedback-section bg-white rounded-lg p-4">
                   <div className="p-6 rounded-lg card">
                     <div className="flex items-center gap-2 mb-4 feedback-header">
                       <i className="fas fa-chart-line text-primary"></i>
@@ -813,7 +811,7 @@ export default function MockInterview() {
                                 {feedback.clarity}/100
                               </span>
                             </div>
-                            <div className="h-2 overflow-hidden rounded-full bg-input">
+                            <div className="h-2 overflow-hidden rounded-full bg-secondary">
                               <div
                                 className={`h-full ${getProgressClass(
                                   feedback.clarity
@@ -846,12 +844,12 @@ export default function MockInterview() {
                                   Missing Keywords
                                 </span>
                               </div>
-                              <div className="flex flex-wrap gap-2 keywords-list">
+                            <div className="flex flex-wrap gap-2 keywords-list">
                                 {feedback.missingKeywords.map(
                                   (keyword, index) => (
                                     <span
                                       key={index}
-                                      className="px-2 py-1 text-xs font-medium rounded-full bg-input text-muted-foreground"
+                                      className="px-2 py-1 text-xs font-medium rounded-full bg-muted text-foreground"
                                     >
                                       {keyword}
                                     </span>
@@ -918,9 +916,9 @@ export default function MockInterview() {
     } else if (screen === "summary") {
       const readinessData = getReadinessData(confidenceScore);
       const scoreGradientClass =
-        confidenceScore >= 71
+        confidenceScore >= 66
           ? "text-primary"
-          : confidenceScore >= 41
+          : confidenceScore >= 33
           ? "text-warning"
           : "text-destructive";
       return (
@@ -1069,5 +1067,9 @@ export default function MockInterview() {
     return null;
   };
 
-  return renderScreen();
+  return (
+    <div className="bg-dark text-white min-vh-100">
+      {renderScreen()}
+    </div>
+  );
 }

@@ -327,20 +327,20 @@ const App = () => {
         <div className="hero-content">
           <div className="hero-text">
             <h1 className="hero-title">
-              The Next-Gen <span className="gradient-text">AI Agent</span> Economy
+              Your AI Career <span className="gradient-text">Transformation</span> Starts here
             </h1>
             <p className="hero-subtitle">
-              Orchestrate Multiple AI Agents To Gather Insights, Take Action, And
-              Earn Rewards Autonomously.
+             Master your career with AI-powerd resume building, market intelligence,
+             interview preparation,and personalized career guigence.
             </p>
             <div className="hero-buttons">
               <button className="btn btn-primary" onClick={() => navigate('/home')}>Get Started</button>
-              <button className="btn btn-secondary">Watch Demo</button>
+              <button className="btn btn-secondary" onClick={() => window.open("https://www.youtube.com/watch?v=rcZnMd53_04", "_blank")}>Watch Demo</button>
             </div>
             <div className="hero-stats">
               <div className="stat">
                 <span className="stat-number">50K+</span>
-                <span className="stat-label">Active Agents</span>
+                <span className="stat-label">Active Users</span>
               </div>
               <div className="stat">
                 <span className="stat-number">95%</span>
@@ -348,7 +348,7 @@ const App = () => {
               </div>
               <div className="stat">
                 <span className="stat-number">24/7</span>
-                <span className="stat-label">Autonomous</span>
+                <span className="stat-label">AI Chatbot</span>
               </div>
             </div>
           </div>
@@ -363,7 +363,7 @@ const App = () => {
 
       {/* Trusted By Section */}
       <section className="trusted-by">
-        <h2>Trusted By Individuals And Teams From</h2>
+        <h2>Trusted Output from Companies like </h2>
         <div className="trusted-logos">
           <div className="logo-item">OpenAI</div>
           <div className="logo-item">Google</div>
@@ -377,8 +377,8 @@ const App = () => {
       {/* Features Section */}
       <section id="features" className="features">
         <div className="section-header">
-          <h2>Powerful Features for AI Orchestration</h2>
-          <p>Everything you need to manage autonomous AI agents</p>
+          <h2>Powerful Features for AI Career guidence</h2>
+          <p>Everything you need to scale up your career</p>
         </div>
 
         <div className="features-grid">
@@ -392,12 +392,11 @@ const App = () => {
                 <line x1="9" y1="12" x2="15" y2="12"></line>
               </svg>
             </div>
-            <h3>Agent Management</h3>
+            <h3>Career Roadmap</h3>
             <p>
-              Create, deploy, and manage multiple AI agents. Monitor their
-              performance and optimize their behavior in real-time.
+              Create personalized career roadmaps with AI-driven insights.
             </p>
-            <a href="#" className="feature-link">
+            <a href="/career-roadmap" className="feature-link">
               Learn more →
             </a>
           </div>
@@ -411,12 +410,11 @@ const App = () => {
                 <polyline points="19 8 12 1 5 8"></polyline>
               </svg>
             </div>
-            <h3>Multi-Agent Orchestration</h3>
+            <h3>Resume Analyzer</h3>
             <p>
-              Coordinate multiple agents to work together seamlessly. Enable
-              complex workflows and autonomous decision-making.
+              Analyze and optimize resumes with AI for better job matching.
             </p>
-            <a href="#" className="feature-link">
+            <a href="/resume-analyze" className="feature-link">
               Learn more →
             </a>
           </div>
@@ -429,12 +427,11 @@ const App = () => {
                 <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
               </svg>
             </div>
-            <h3>Real-Time Monitoring</h3>
+            <h3>Resume Builder</h3>
             <p>
-              Track agent activities, performance metrics, and system health. Get
-              instant alerts for anomalies and issues.
+              Build professional resumes effortlessly with AI assistance.
             </p>
-            <a href="#" className="feature-link">
+            <a href="/resume-builder" className="feature-link">
               Learn more →
             </a>
           </div>
@@ -449,12 +446,11 @@ const App = () => {
                 <circle cx="15" cy="10" r="1"></circle>
               </svg>
             </div>
-            <h3>Autonomous Execution</h3>
+            <h3>Mock Interveiw</h3>
             <p>
-              Let agents execute tasks independently. Set rules and watch them
-              take action without manual intervention.
+              Practice interviews with AI-powered mock interview simulations.
             </p>
-            <a href="#" className="feature-link">
+            <a href="/mock-interview" className="feature-link">
               Learn more →
             </a>
           </div>
@@ -470,12 +466,11 @@ const App = () => {
                 <path d="M4.22 19.78l4.24-4.24m5.08-5.08l4.24-4.24"></path>
               </svg>
             </div>
-            <h3>Reward System</h3>
+            <h3>Job Market</h3>
             <p>
-              Incentivize agent performance with dynamic rewards. Track earnings
-              and optimize ROI across your agent network.
+              Stay updated with the latest job market trends and opportunities.
             </p>
-            <a href="#" className="feature-link">
+            <a href="/job-market" className="feature-link">
               Learn more →
             </a>
           </div>
@@ -489,12 +484,11 @@ const App = () => {
                 <polyline points="2 12 12 17 22 12"></polyline>
               </svg>
             </div>
-            <h3>Advanced Analytics</h3>
+            <h3>Chatbot</h3>
             <p>
-              Deep insights into agent behavior and performance. Predictive
-              analytics to optimize your AI economy.
+              Get instant career advice with our AI-powered chatbot.
             </p>
-            <a href="#" className="feature-link">
+            <a href="/chatbot" className="feature-link">
               Learn more →
             </a>
           </div>
@@ -511,28 +505,25 @@ const App = () => {
         <div className="steps-container">
           <div className="step">
             <div className="step-number">01</div>
-            <h3>Create Agents</h3>
+            <h3>Resume Analyzer</h3>
             <p>
-              Define agent behaviors, goals, and constraints. Configure them for
-              your specific use case.
+              Define your career goals and set up AI agents to work towards them.
             </p>
           </div>
           <div className="step-arrow">→</div>
           <div className="step">
             <div className="step-number">02</div>
-            <h3>Deploy & Monitor</h3>
+            <h3>Market Insights</h3>
             <p>
-              Launch your agents and monitor their performance in real-time with
-              advanced analytics.
+              Deploy AI agents to gather real-time job market data and insights.
             </p>
           </div>
           <div className="step-arrow">→</div>
           <div className="step">
             <div className="step-number">03</div>
-            <h3>Earn & Optimize</h3>
+            <h3>Mock Interveiw</h3>
             <p>
-              Collect rewards and continuously optimize your agent network for
-              maximum efficiency.
+              Review AI-generated reports and take action to advance your career.
             </p>
           </div>
         </div>
@@ -596,7 +587,7 @@ const App = () => {
               <div className="testimonial-author">
                 <div className="author-avatar">
                   <img
-                    src="https://img.icons8.com/material-outlined/48/user--v1.png" 
+                    src="https://img.icons8.com/material-outlined/48/user--v1.png"
                     alt="Satish Hukkeri"
                   />
                 </div>
@@ -611,9 +602,9 @@ const App = () => {
       </section>
 
       {/* CTA Section */}
-      
 
-     
+
+
     </>
   );
 };

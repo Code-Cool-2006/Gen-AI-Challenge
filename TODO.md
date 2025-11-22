@@ -1,12 +1,17 @@
-# TODO: Fix Backend Errors
+# UI/UX Enhancement for Dark Mode Consistency and Readability
 
-## Steps to Complete
-- [x] Update backend/main.py to use relative imports for routers (e.g., from .routers import auth)
-- [x] Fix backend/routers/interview_routes.py: Add missing imports (BaseModel, List, InterviewSession, gemini_service), remove faulty logger line
-- [x] Update backend/routers/career_path_routes.py to use relative imports (e.g., from ..models import User)
-- [x] Update backend/routers/user.py to use relative imports (e.g., from ..database import get_db)
-- [x] Check and update other router files (auth.py, profile_routes.py, chatbot.py, job_market.py, review_resume.py) for consistent relative imports
-- [x] Force backend to use SQLite by hardcoding DATABASE_URL in database.py
-- [x] Test the server by running uvicorn backend.main:app to ensure no import errors
-- [ ] Update backend/models.py: Add missing columns to InterviewSession (job_title, experience_level, current_question, status)
-- [ ] Update backend/routers/interview_routes.py: Fix attribute accesses (current_user.id to current_user.user_id, InterviewSession.id to session_id, handle session_id as int)
+## Tasks to Complete
+
+- [x] Update ResumeAnalyzer.jsx to use theme-aware classes and ensure API output readability in both light and dark modes
+- [ ] Update MockInterview.jsx to use theme-aware classes and ensure feedback/output readability in both light and dark modes
+- [ ] Verify navbar dark mode toggle affects all components consistently
+- [ ] Test readability of API responses in both modes
+- [ ] Ensure no hard-coded colors; use CSS variables throughout
+
+## Completed Tasks
+
+- Updated ResumeAnalyzer.jsx SimpleMarkdownRenderer to use text-foreground for all text elements
+- Updated ResumeAnalyzer.jsx main heading to use text-foreground
+- Updated ResumeAnalyzer.jsx cards to use bg-background and border-secondary
+- Updated ResumeAnalyzer.jsx textarea to use bg-background, text-foreground, and border-secondary
+- Updated ResumeAnalyzer.jsx feedback heading to use text-foreground
