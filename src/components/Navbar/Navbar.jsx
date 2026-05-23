@@ -21,7 +21,7 @@ function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const toggleMenu = () => setIsOpen(!isOpen);
+  const toggleMenu = () => setIsOpen((prev) => !prev);
   const closeMenu = () => setIsOpen(false);
 
   const handleLogout = () => {
@@ -44,7 +44,7 @@ function Navbar() {
         </div>
 
         <div className="nav-right">
-          <ul className={isOpen ? "nav-menu active" : "nav-menu"}>
+          <ul className={`nav-menu${isOpen ? " active" : ""}`}>
             <li className="nav-item">
               <Link to="/home" className="nav-links" onClick={closeMenu}>
                 Home
