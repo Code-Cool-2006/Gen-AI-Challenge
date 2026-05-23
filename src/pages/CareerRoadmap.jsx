@@ -1,362 +1,462 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
+/* ─── Design tokens ─────────────────────────────────────────────── */
+const T = {
+  paper:   "#F5F0E8",
+  ink:     "#1A1410",
+  mid:     "#6B5E52",
+  faint:   "#D6CFC4",
+  accent:  "#C8401A",
+  accentL: "#E8866A",
+  blue:    "#1E3A5F",
+  blueL:   "#4A7BAF",
+  gold:    "#B8860B",
+  white:   "#FDFAF5",
+};
+
+const css = `
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  .cr-root {
+    min-height: 100vh;
+    background: ${T.paper};
+    color: ${T.ink};
+    font-family: 'DM Sans', sans-serif;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* Subtle dot-grid background */
+  .cr-root::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: radial-gradient(circle, ${T.faint} 1px, transparent 1px);
+    background-size: 28px 28px;
+    opacity: 0.6;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .cr-inner {
+    position: relative;
+    z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: clamp(2rem, 6vw, 5rem) clamp(1.25rem, 5vw, 2.5rem);
+  }
+
+  /* ── Header ── */
+  .cr-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: ${T.accent};
+    margin-bottom: 1.25rem;
+  }
+  .cr-eyebrow::before {
+    content: '';
+    display: block;
+    width: 28px;
+    height: 1.5px;
+    background: ${T.accent};
+  }
+
+  .cr-headline {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 900;
+    font-size: clamp(2.6rem, 7vw, 5rem);
+    line-height: 1.05;
+    color: ${T.ink};
+    margin-bottom: 1.5rem;
+    letter-spacing: -0.02em;
+  }
+  .cr-headline em {
+    font-style: italic;
+    color: ${T.accent};
+  }
+
+  .cr-subhead {
+    font-size: clamp(0.95rem, 2.2vw, 1.1rem);
+    color: ${T.mid};
+    line-height: 1.75;
+    max-width: 560px;
+    margin-bottom: 2.5rem;
+    font-weight: 300;
+  }
+
+  /* ── Divider rule ── */
+  .cr-rule {
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(to right, ${T.ink}, ${T.faint} 80%, transparent);
+    margin: 2rem 0;
+  }
+
+  /* ── Input area ── */
+  .cr-form {
+    display: flex;
+    gap: 0.75rem;
+    align-items: stretch;
+    flex-wrap: wrap;
+    margin-bottom: 3rem;
+  }
+
+  .cr-input-wrap {
+    flex: 1 1 260px;
+    position: relative;
+  }
+  .cr-input-wrap svg {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: ${T.mid};
+    width: 16px;
+    height: 16px;
+    pointer-events: none;
+  }
+  .cr-input {
+    width: 100%;
+    padding: 0.85rem 1rem 0.85rem 2.75rem;
+    background: ${T.white};
+    border: 1.5px solid ${T.faint};
+    border-radius: 6px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    color: ${T.ink};
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .cr-input::placeholder { color: ${T.mid}; opacity: 0.6; }
+  .cr-input:focus {
+    border-color: ${T.blue};
+    box-shadow: 0 0 0 3px rgba(30,58,95,0.08);
+  }
+
+  .cr-btn {
+    padding: 0.85rem 1.75rem;
+    background: ${T.ink};
+    color: ${T.paper};
+    border: none;
+    border-radius: 6px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    transition: background 0.2s, transform 0.15s;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .cr-btn:hover { background: ${T.blue}; transform: translateY(-1px); }
+  .cr-btn:active { transform: translateY(0); }
+  .cr-btn:disabled { background: ${T.mid}; cursor: not-allowed; transform: none; }
+
+  /* ── Results panel ── */
+  .cr-results {
+    background: ${T.white};
+    border: 1.5px solid ${T.faint};
+    border-radius: 10px;
+    overflow: hidden;
+    transition: max-height 0.5s cubic-bezier(0.4,0,0.2,1), opacity 0.4s ease;
+    opacity: 0;
+    max-height: 0;
+  }
+  .cr-results.open {
+    opacity: 1;
+    max-height: 3000px;
+  }
+
+  .cr-results-header {
+    background: ${T.ink};
+    color: ${T.paper};
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+  .cr-results-header .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: ${T.accentL};
+    animation: blink 1.2s ease-in-out infinite;
+  }
+
+  @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0.2; } }
+
+  .cr-results-body {
+    padding: clamp(1.25rem, 4vw, 2rem) clamp(1.25rem, 4vw, 2rem);
+  }
+
+  /* ── Formatted output ── */
+  .cr-prose h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.1rem, 3vw, 1.4rem);
+    font-weight: 700;
+    color: ${T.blue};
+    margin: 1.75rem 0 0.6rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1.5px solid ${T.faint};
+  }
+  .cr-prose h3:first-child { margin-top: 0; }
+  .cr-prose p {
+    font-size: 0.95rem;
+    line-height: 1.8;
+    color: ${T.mid};
+    margin-bottom: 0.75rem;
+  }
+  .cr-prose ul {
+    list-style: none;
+    padding: 0;
+    margin-bottom: 0.75rem;
+  }
+  .cr-prose li {
+    font-size: 0.93rem;
+    line-height: 1.75;
+    color: ${T.ink};
+    padding: 0.4rem 0 0.4rem 1.4rem;
+    position: relative;
+    border-bottom: 1px solid ${T.faint};
+  }
+  .cr-prose li:last-child { border-bottom: none; }
+  .cr-prose li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: ${T.accent};
+    font-weight: 500;
+  }
+  .cr-prose strong { color: ${T.ink}; font-weight: 500; }
+  .cr-prose em { color: ${T.gold}; font-style: italic; }
+  .cr-prose br { display: block; margin: 0.25rem 0; content: ''; }
+
+  /* ── Loading ── */
+  .cr-loading {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 1.5rem 0;
+    color: ${T.mid};
+    font-size: 0.9rem;
+    font-weight: 300;
+    letter-spacing: 0.03em;
+  }
+  .cr-spinner {
+    width: 22px; height: 22px;
+    border: 2px solid ${T.faint};
+    border-top-color: ${T.blue};
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Footer note ── */
+  .cr-footer {
+    margin-top: 3rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: ${T.mid};
+    letter-spacing: 0.05em;
+    font-family: 'DM Mono', monospace;
+  }
+  .cr-footer::before {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: ${T.faint};
+  }
+
+  @media (max-width: 520px) {
+    .cr-btn { width: 100%; justify-content: center; }
+    .cr-input-wrap { flex-basis: 100%; }
+  }
+`;
+
+/* ─── Markdown → HTML (same logic, new classes) ──────────────────── */
+function formatResponse(text) {
+  const lines = (text || "").split("\n");
+  const parts = [];
+  let inList = false;
+
+  const closeList = () => { if (inList) { parts.push("</ul>"); inList = false; } };
+  const inline = (s) =>
+    s.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+     .replace(/\*(.*?)\*/g, "<em>$1</em>");
+
+  for (const raw of lines) {
+    const line = raw.trimEnd();
+    if (/^#{1,6}\s+/.test(line)) {
+      closeList();
+      parts.push(`<h3>${inline(line.replace(/^#{1,6}\s+/, ""))}</h3>`);
+      continue;
+    }
+    const li = line.match(/^[-*]\s+(.*)$/);
+    if (li) {
+      if (!inList) { inList = true; parts.push("<ul>"); }
+      parts.push(`<li>${inline(li[1])}</li>`);
+      continue;
+    }
+    if (line.trim() === "") { closeList(); parts.push("<br>"); continue; }
+    closeList();
+    parts.push(`<p>${inline(line)}</p>`);
+  }
+  closeList();
+  return parts.join("");
+}
+
+/* ─── API call ───────────────────────────────────────────────────── */
+async function callGemini(jobTitle, apiKey) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+  const system = `You are a helpful and encouraging career advisor. Provide clear, structured, motivating career guidance. Format using markdown headings.`;
+  const user = `Provide a career path analysis for: "${jobTitle}". Include:\n1. **🚀 A Potential Career Path:** Entry role + 3–5 advancement steps.\n2. **🔧 Key Skills to Master:** 5–7 crucial technical and soft skills.\n3. **🤔 Sample Interview Questions:** 3 insightful questions — one behavioral, one technical, one situational.`;
+
+  for (let i = 0; i < 3; i++) {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: user }] }],
+        systemInstruction: { parts: [{ text: system }] },
+      }),
+    });
+    if (!res.ok) throw new Error(`API error ${res.status}`);
+    const data = await res.json();
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (text) return text;
+    if (i < 2) await new Promise((r) => setTimeout(r, 1000 * 2 ** i));
+  }
+  throw new Error("No response from API");
+}
+
+/* ─── Component ──────────────────────────────────────────────────── */
 export default function CareerRoadmap() {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY || "";
   const [jobTitle, setJobTitle] = useState("");
   const [loading, setLoading] = useState(false);
   const [htmlOutput, setHtmlOutput] = useState("");
+  const [open, setOpen] = useState(false);
   const resultsRef = useRef(null);
 
-  // Inject Tailwind CDN (if app doesn't have Tailwind configured) and Google Font
-  useEffect(() => {
-    const ensureLink = (id, href, rel = "stylesheet") => {
-      let el = document.getElementById(id);
-      if (!el) {
-        el = document.createElement("link");
-        el.id = id;
-        el.rel = rel;
-        el.href = href;
-        document.head.appendChild(el);
-      }
-      return el;
-    };
-
-    ensureLink(
-      "google-font-inter",
-      "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap"
-    );
-
-    if (!document.getElementById("tailwind-cdn")) {
-      const tw = document.createElement("script");
-      tw.id = "tailwind-cdn";
-      tw.src = "https://cdn.tailwindcss.com";
-      document.head.appendChild(tw);
-    }
-  }, []);
-
-  // Load tsParticles bundle via CDN
-  useEffect(() => {
-    const ensureScript = (id, src) => {
-      return new Promise((resolve) => {
-        const existing = document.getElementById(id);
-        if (existing) {
-          if (window.tsParticles) return resolve();
-          existing.addEventListener("load", () => resolve());
-          return;
-        }
-        const script = document.createElement("script");
-        script.id = id;
-        script.src = src;
-        script.async = true;
-        script.onload = () => resolve();
-        document.body.appendChild(script);
-      });
-    };
-
-    ensureScript(
-      "tsparticles-cdn",
-      "https://cdn.jsdelivr.net/npm/tsparticles@2.12.0/tsparticles.bundle.min.js"
-    ).then(() => {
-      if (window.tsParticles) {
-        window.tsParticles.load("particles-js", {
-          particles: {
-            number: { value: 150, density: { enable: true, value_area: 800 } },
-            color: { value: ["#0ea5e9", "#64748b", "#ffffff"] },
-            shape: { type: "circle" },
-            opacity: { value: { min: 0.1, max: 0.5 }, random: true },
-            size: { value: { min: 1, max: 3 }, random: true },
-            line_linked: {
-              enable: true,
-              distance: 150,
-              color: "#2563eb",
-              opacity: 0.2,
-              width: 1,
-            },
-            move: {
-              enable: true,
-              speed: 1,
-              direction: "none",
-              random: true,
-              straight: false,
-              out_mode: "out",
-              bounce: false,
-            },
-          },
-          interactivity: {
-            detect_on: "canvas",
-            events: {
-              onhover: { enable: true, mode: "grab" },
-              onclick: { enable: true, mode: "push" },
-              resize: true,
-            },
-            modes: {
-              grab: { distance: 140, line_linked: { opacity: 0.5 } },
-              push: { particles_nb: 4 },
-            },
-          },
-          retina_detect: true,
-        });
-      }
-    });
-  }, []);
-
-  const formatResponse = useMemo(() => {
-    return function formatResponse(text) {
-      const lines = (text || "").split("\n");
-      let htmlParts = [];
-      let inList = false;
-
-      const closeListIfOpen = () => {
-        if (inList) {
-          htmlParts.push("</ul>");
-          inList = false;
-        }
-      };
-
-      const applyInline = (s) => {
-        s = s.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
-        s = s.replace(/\*(.*?)\*/g, "<em>$1</em>");
-        return s;
-      };
-
-      for (const rawLine of lines) {
-        const line = rawLine.trimEnd();
-        if (/^#{1,6}\s+/.test(line)) {
-          closeListIfOpen();
-          const t = line.replace(/^#{1,6}\s+/, "");
-          htmlParts.push(
-            `<h3 class="text-xl font-bold text-sky-400 mb-2 mt-4">${applyInline(
-              t
-            )}</h3>`
-          );
-          continue;
-        }
-        const listMatch = line.match(/^[-*]\s+(.*)$/);
-        if (listMatch) {
-          if (!inList) {
-            inList = true;
-            htmlParts.push('<ul class="list-disc pl-6">');
-          }
-          htmlParts.push(
-            `<li class="mb-1 ml-4">${applyInline(listMatch[1])}</li>`
-          );
-          continue;
-        }
-        if (line.trim() === "") {
-          closeListIfOpen();
-          htmlParts.push("<br>");
-          continue;
-        }
-        closeListIfOpen();
-        htmlParts.push(`<p class="mb-2">${applyInline(line)}</p>`);
-      }
-
-      closeListIfOpen();
-      return htmlParts.join("");
-    };
-  }, []);
-
-  async function callGeminiApi(
-    userQuery,
-    systemPrompt,
-    retries = 3,
-    delay = 1000
-  ) {
-    if (!apiKey) throw new Error("Missing Gemini API key");
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-
-    const payload = {
-      contents: [{ parts: [{ text: userQuery }] }],
-      systemInstruction: { parts: [{ text: systemPrompt }] },
-    };
-
-    for (let i = 0; i < retries; i++) {
-      try {
-        const response = await fetch(apiUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        if (!response.ok) {
-          throw new Error(`API responded with status: ${response.status}`);
-        }
-        const result = await response.json();
-        const candidate = result.candidates && result.candidates[0];
-        if (
-          candidate &&
-          candidate.content &&
-          candidate.content.parts &&
-          candidate.content.parts[0] &&
-          candidate.content.parts[0].text
-        ) {
-          return candidate.content.parts[0].text;
-        }
-        throw new Error("Invalid response structure from API.");
-      } catch (err) {
-        if (i === retries - 1) throw err;
-        await new Promise((res) => setTimeout(res, delay * Math.pow(2, i)));
-      }
-    }
-  }
-
-  const onClickPathfinder = async () => {
-    const value = jobTitle.trim();
-    const resultsEl = resultsRef.current;
-    if (!value) {
-      setHtmlOutput(
-        '<p class="text-amber-400">Please enter a job title to begin your journey.</p>'
-      );
-      if (resultsEl) {
-        resultsEl.style.maxHeight = "1000px";
-      }
+  const onSubmit = async () => {
+    const val = jobTitle.trim();
+    if (!val) {
+      setHtmlOutput("<p>Please enter a job title to begin.</p>");
+      setOpen(true);
       return;
     }
-
     setLoading(true);
     setHtmlOutput("");
-    if (resultsEl) {
-      resultsEl.style.maxHeight = "1000px";
-      resultsEl.style.overflow = "hidden";
-    }
-
-    const systemPrompt = `You are a helpful and encouraging career advisor. Your goal is to provide clear, structured, and motivating career guidance based on a user's entered job title. Format your response using markdown with clear headings.`;
-    const userQuery = `Provide a career path analysis for the job title: "${value}". Include these three sections:\n1.  *🚀 A Potential Career Path:* Start with the entry role and list 3-5 potential advancement steps.\n2.  *🔧 Key Skills to Master:* List 5-7 crucial technical and soft skills for success in this field.\n3.  *🤔 Sample Interview Questions:* Provide 3 insightful interview questions for this role, one behavioral, one technical, and one situational.`;
+    setOpen(true);
 
     try {
-      const generatedText = await callGeminiApi(userQuery, systemPrompt);
-      const formattedHtml = formatResponse(generatedText);
-      setHtmlOutput(formattedHtml);
-      if (resultsEl) {
-        resultsEl.style.maxHeight = "none";
-        resultsEl.style.overflow = "visible";
-        resultsEl.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error("Gemini API Error:", error);
-      setHtmlOutput(
-        '<p class="text-red-400">Sorry, there was an issue connecting to the Career Pathfinder AI. Please try again later.</p>'
-      );
+      const raw = await callGemini(val, apiKey);
+      setHtmlOutput(formatResponse(raw));
+      setTimeout(() => {
+        resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+    } catch {
+      setHtmlOutput("<p>Could not connect to the AI. Please try again.</p>");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div
-      className="bg-slate-900 text-white min-h-screen"
-      style={{ fontFamily: "Inter, sans-serif" }}
-    >
-      <div
-        id="particles-js"
-        style={{
-          position: "fixed",
-          width: "100%",
-          height: "calc(100% - 72px)",
-          top: "72px",
-          left: 0,
-          zIndex: 0,
-          backgroundColor: "#020617",
-        }}
-      />
+    <>
+      <style>{css}</style>
+      <div className="cr-root">
+        <div className="cr-inner">
 
-      <div
-        className="content-container p-4"
-        style={{
-          position: "relative",
-          zIndex: 1,
-          minHeight: "100vh",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-          paddingBottom: "4rem",
-        }}
-      >
-        <div className="text-center max-w-3xl mx-auto w-full">
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold mb-4 leading-tight">
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-sky-400 to-blue-500">
-              Every Career is a Story Waiting to Unfold
-            </span>
+          {/* Eyebrow */}
+          <div className="cr-eyebrow">AI Career Pathfinder</div>
+
+          {/* Headline */}
+          <h1 className="cr-headline">
+            Every career is a<br />
+            story <em>waiting</em> to unfold.
           </h1>
 
-          <p className="text-lg md:text-xl text-slate-300 mb-8 max-w-2xl mx-auto">
-            Your journey is unique. It's time for the next chapter. Use our
-            AI-powered Pathfinder to discover where your story can lead.
+          <p className="cr-subhead">
+            Enter your job title and our AI advisor will chart a personalised
+            path — from where you are to where you want to be.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 max-w-2xl mx-auto">
-            <div className="relative w-full">
-              <svg
-                className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400"
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+          <div className="cr-rule" />
+
+          {/* Form */}
+          <div className="cr-form">
+            <div className="cr-input-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
               </svg>
               <input
+                className="cr-input"
                 value={jobTitle}
                 onChange={(e) => setJobTitle(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && !loading && onSubmit()}
                 type="text"
-                placeholder="Enter a job title, e.g., 'Data Scientist'"
-                className="w-full pl-12 pr-4 py-3 rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all duration-300"
+                placeholder="e.g. Product Manager, Data Scientist…"
               />
             </div>
-            <button
-              onClick={onClickPathfinder}
-              className="w-full sm:w-auto bg-violet-600 hover:bg-violet-700 text-white font-bold py-3 px-6 rounded-lg transition-transform duration-300 ease-in-out hover:scale-105 shadow-lg shadow-violet-500/30 flex items-center justify-center gap-2"
-            >
-              ✨ Career Pathfinder
+            <button className="cr-btn" onClick={onSubmit} disabled={loading}>
+              {loading ? (
+                <>
+                  <span className="cr-spinner" />
+                  Charting…
+                </>
+              ) : (
+                <>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                  </svg>
+                  Chart My Path
+                </>
+              )}
             </button>
           </div>
-        </div>
 
-        <div
-          ref={resultsRef}
-          className="mt-10 max-w-3xl w-full bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-lg p-6"
-          style={{
-            transition: "all 0.5s ease-in-out",
-            maxHeight: 0,
-            overflow: "hidden",
-          }}
-        >
-          <div
-            className={`${
-              loading ? "flex" : "hidden"
-            } justify-center items-center py-8`}
-          >
-            <div
-              className="loader"
-              style={{
-                border: "4px solid #f3f3f3",
-                borderTop: "4px solid #3498db",
-                borderRadius: "50%",
-                width: 40,
-                height: 40,
-                animation: "spin 2s linear infinite",
-              }}
-            />
-            <p className="ml-4 text-slate-300">
-              Gemini is charting the course...
-            </p>
+          {/* Results */}
+          <div ref={resultsRef} className={`cr-results${open ? " open" : ""}`}>
+            <div className="cr-results-header">
+              {loading && <span className="dot" />}
+              {loading ? "Gemini is charting your course…" : `Analysis — ${jobTitle || "—"}`}
+            </div>
+            <div className="cr-results-body">
+              {loading && (
+                <div className="cr-loading">
+                  <span className="cr-spinner" />
+                  Thinking through your career trajectory…
+                </div>
+              )}
+              <div
+                className="cr-prose"
+                dangerouslySetInnerHTML={{ __html: htmlOutput }}
+              />
+            </div>
           </div>
-          <div
-            className="prose prose-invert max-w-none text-slate-200"
-            dangerouslySetInnerHTML={{ __html: htmlOutput }}
-          />
+
+          {/* Footer */}
+          <div className="cr-footer">Powered by Gemini 2.5 Flash</div>
+
         </div>
       </div>
-
-      <style>{`
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-      `}</style>
-    </div>
+    </>
   );
 }
