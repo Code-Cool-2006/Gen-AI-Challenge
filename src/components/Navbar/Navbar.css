@@ -173,7 +173,6 @@
 /* ── Mobile ── */
 
 @media screen and (max-width: 960px) {
-
   .navbar {
     height: auto;
     background: #ffffff;
@@ -218,20 +217,18 @@
     order: 3;
   }
 
-  /* hidden by default */
   .nav-menu {
     display: none;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
     width: 100%;
     list-style: none;
     margin: 0;
-    padding: 0.5rem 0 1rem 0;
+    padding: 8px 0 16px 0;
     background: #ffffff;
     border-top: 1px solid rgba(0, 0, 0, 0.08);
   }
 
-  /* shown when active */
   .nav-menu.active {
     display: flex;
   }
@@ -240,25 +237,29 @@
     width: 100%;
     height: auto;
     padding: 0;
-    display: block;
+    display: flex;
+    align-items: stretch;
   }
 
-  /* the key fix: reset height: 100% which collapses to 0 on mobile */
-  .nav-links {
-    display: block;
+  /* force links visible — override everything */
+  .navbar .nav-menu .nav-item .nav-links {
+    display: flex;
+    align-items: center;
     height: auto;
+    min-height: 48px;
     width: 100%;
-    padding: 12px 16px;
+    padding: 0 16px;
     color: #2d3748;
-    font-weight: 500;
     font-size: 1rem;
+    font-weight: 500;
     text-decoration: none;
+    background: transparent;
     border-radius: 6px;
-    white-space: normal;
     box-sizing: border-box;
+    white-space: normal;
   }
 
-  .nav-links:hover {
+  .navbar .nav-menu .nav-item .nav-links:hover {
     color: #4a6cf7;
     background: #f0f4ff;
   }
@@ -267,15 +268,17 @@
     display: none;
   }
 
-  .logout-btn {
+  /* force logout button visible */
+  .navbar .nav-menu .nav-item .logout-btn {
     display: flex;
     align-items: center;
     height: auto;
+    min-height: 48px;
     width: 100%;
-    padding: 12px 16px;
+    padding: 0 16px;
     color: #2d3748;
-    font-weight: 500;
     font-size: 1rem;
+    font-weight: 500;
     background: none;
     border: none;
     cursor: pointer;
@@ -284,9 +287,10 @@
     border-radius: 6px;
     box-sizing: border-box;
     text-align: left;
+    justify-content: flex-start;
   }
 
-  .logout-btn:hover {
+  .navbar .nav-menu .nav-item .logout-btn:hover {
     color: #4a6cf7;
     background: #f0f4ff;
   }
