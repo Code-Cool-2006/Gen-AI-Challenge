@@ -11,7 +11,177 @@ import {
 } from "recharts";
 import { FaSearch } from "react-icons/fa";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import "./CSS/home.css";
+
+const styles = {
+  page: {
+    minHeight: "100vh",
+    background: "linear-gradient(135deg, #0a0e27 0%, #0f1a3a 50%, #1a2847 100%)",
+    color: "#ffffff",
+    fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+  },
+
+  // Hero
+  hero: {
+    paddingTop: "6rem",
+    paddingBottom: "2rem",
+    paddingLeft: "1.5rem",
+    paddingRight: "1.5rem",
+    textAlign: "center",
+  },
+  heroTitle: {
+    fontSize: "clamp(2rem, 5vw, 3.5rem)",
+    fontWeight: 800,
+    lineHeight: 1.2,
+    marginBottom: "1rem",
+    color: "#ffffff",
+  },
+  gradientText: {
+    background: "linear-gradient(135deg, #00d4ff 0%, #0066ff 100%)",
+    WebkitBackgroundClip: "text",
+    WebkitTextFillColor: "transparent",
+    backgroundClip: "text",
+  },
+  heroSubtitle: {
+    fontSize: "clamp(1rem, 2.5vw, 1.25rem)",
+    color: "#a0b0c0",
+    maxWidth: "600px",
+    margin: "0 auto",
+    lineHeight: 1.8,
+  },
+
+  // Search Section
+  section: {
+    padding: "2rem 1.5rem 4rem",
+  },
+  card: {
+    background: "#1a2847",
+    border: "1px solid #2a3f5f",
+    padding: "clamp(1.25rem, 4vw, 2rem)",
+    borderRadius: "12px",
+    boxShadow: "0 10px 40px rgba(0,0,0,0.3)",
+    maxWidth: "900px",
+    margin: "0 auto",
+  },
+  cardTitle: {
+    fontSize: "clamp(1.4rem, 3vw, 2rem)",
+    fontWeight: 700,
+    marginBottom: "0.75rem",
+    textAlign: "center",
+    color: "#ffffff",
+  },
+  cardSubtitle: {
+    textAlign: "center",
+    color: "#a0b0c0",
+    marginBottom: "2rem",
+    fontSize: "clamp(0.9rem, 2vw, 1rem)",
+  },
+
+  // Input row
+  inputRow: {
+    display: "flex",
+    flexDirection: "row",
+    gap: "0.75rem",
+    justifyContent: "center",
+    marginBottom: "2rem",
+    flexWrap: "wrap",
+  },
+  input: {
+    flex: "1 1 200px",
+    maxWidth: "480px",
+    minWidth: "0",
+    padding: "0.875rem 1rem",
+    background: "#0a0e27",
+    border: "1px solid #2a3f5f",
+    borderRadius: "8px",
+    color: "#ffffff",
+    fontSize: "1rem",
+    outline: "none",
+  },
+  button: {
+    display: "flex",
+    alignItems: "center",
+    gap: "0.5rem",
+    padding: "0.875rem 1.5rem",
+    background: "linear-gradient(135deg, #00d4ff 0%, #0066ff 100%)",
+    color: "#0a0e27",
+    border: "none",
+    borderRadius: "8px",
+    fontSize: "1rem",
+    fontWeight: 600,
+    cursor: "pointer",
+    transition: "all 0.3s ease",
+    whiteSpace: "nowrap",
+    flexShrink: 0,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+    cursor: "not-allowed",
+  },
+
+  // Error
+  error: {
+    color: "#ef4444",
+    textAlign: "center",
+    marginBottom: "1rem",
+    fontSize: "0.95rem",
+  },
+
+  // Insights
+  insightsWrapper: {
+    marginTop: "2rem",
+    animation: "fadeIn 0.6s ease",
+  },
+  statsGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+    gap: "1.25rem",
+    marginBottom: "2rem",
+  },
+  statCard: (borderColor, bgColor) => ({
+    background: bgColor,
+    padding: "1.5rem",
+    borderRadius: "12px",
+    border: `1px solid ${borderColor}`,
+    textAlign: "center",
+  }),
+  statLabel: {
+    fontSize: "0.9rem",
+    color: "#a0b0c0",
+    marginBottom: "0.5rem",
+  },
+  statValue: (color) => ({
+    fontSize: "clamp(1.2rem, 3vw, 1.5rem)",
+    fontWeight: 700,
+    color: color,
+    wordBreak: "break-word",
+  }),
+
+  // Chart container
+  chartContainer: {
+    background: "#0a0e27",
+    padding: "1.5rem",
+    borderRadius: "12px",
+    border: "1px solid #2a3f5f",
+    overflowX: "auto",
+  },
+  chartTitle: {
+    fontSize: "clamp(1.1rem, 3vw, 1.5rem)",
+    fontWeight: 700,
+    textAlign: "center",
+    marginBottom: "1.5rem",
+    color: "#ffffff",
+  },
+
+  yAxisTick: {
+    fontSize: 13,
+    fill: "#a0b0c0",
+  },
+};
+
+const BAR_COLORS = [
+  "#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#0088fe",
+  "#00c49f", "#ffbb28", "#d0ed57", "#a4de6c", "#f06292",
+];
 
 const JobMarketPage = () => {
   const [jobTitle, setJobTitle] = useState("");
@@ -19,7 +189,6 @@ const JobMarketPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Initialize SDK
   const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
 
   const handleGetInsights = async () => {
@@ -56,13 +225,9 @@ const JobMarketPage = () => {
       const result = await model.generateContent(prompt);
       const response = await result.response;
       let text = response.text();
-
-      // Clean up if AI adds markdown code blocks
       text = text.replace(/```json/g, "").replace(/```/g, "").trim();
-
       const parsedData = JSON.parse(text);
 
-      // Sort skills by importance for better visualization
       if (parsedData.topSkills) {
         parsedData.topSkills = parsedData.topSkills.sort(
           (a, b) => b.importance - a.importance
@@ -78,177 +243,147 @@ const JobMarketPage = () => {
     }
   };
 
-  const barColors = [
-    "#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#0088fe",
-    "#00c49f", "#ffbb28", "#d0ed57", "#a4de6c", "#f06292",
-  ];
+  const chartHeight = insights ? Math.max(insights.topSkills.length * 55, 200) : 200;
+
+  // Responsive Y-axis width: estimate based on longest skill name
+  const yAxisWidth = insights
+    ? Math.min(
+        Math.max(...insights.topSkills.map((s) => s.name.length)) * 7 + 10,
+        160
+      )
+    : 120;
 
   return (
-    <>
-      {/* Hero Section */}
-      <section className="hero" style={{ paddingBottom: '2rem' }}>
-        <div className="hero-content">
-          <div className="hero-text" style={{ textAlign: 'center', maxWidth: '800px', margin: '0 auto' }}>
-            <h1 className="hero-title">
-              Job Market <span className="gradient-text">Insights</span>
-            </h1>
-            <p className="hero-subtitle">
-              Get real-time AI-analyzed data on salary trends, demand, and skills.
-            </p>
-          </div>
-        </div>
+    <div style={styles.page}>
+      {/* Keyframe injection */}
+      <style>{`
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        input::placeholder { color: #5a6a7a; }
+        input:focus { border-color: #00d4ff !important; }
+        @media (max-width: 480px) {
+          .jm-input-row { flex-direction: column !important; }
+          .jm-button { width: 100% !important; justify-content: center; }
+        }
+      `}</style>
+
+      {/* Hero */}
+      <section style={styles.hero}>
+        <h1 style={styles.heroTitle}>
+          Job Market <span style={styles.gradientText}>Insights</span>
+        </h1>
+        <p style={styles.heroSubtitle}>
+          Get real-time AI-analyzed data on salary trends, demand, and skills.
+        </p>
       </section>
 
-      {/* Search Section */}
-      <section className="features" style={{ paddingTop: '2rem' }}>
-        <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '0 2rem' }}>
-          <div style={{
-            background: 'var(--dark-card)',
-            border: '1px solid var(--dark-border)',
-            padding: '2rem',
-            borderRadius: '12px',
-            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)'
-          }}>
-            <h2 style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '1rem', textAlign: 'center' }}>
-              📊 Analyze Job Market Data
-            </h2>
-            <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '2rem' }}>
-              Enter a job title to generate live market data using AI.
-            </p>
+      {/* Main Card */}
+      <section style={styles.section}>
+        <div style={styles.card}>
+          <h2 style={styles.cardTitle}>📊 Analyze Job Market Data</h2>
+          <p style={styles.cardSubtitle}>
+            Enter a job title to generate live market data using AI.
+          </p>
 
-            {/* Input + Button */}
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginBottom: '2rem' }}>
-              <input
-                type="text"
-                value={jobTitle}
-                onChange={(e) => setJobTitle(e.target.value)}
-                placeholder="Enter Job Title (e.g., React Developer)"
-                style={{
-                  flex: 1,
-                  maxWidth: '500px',
-                  padding: '0.875rem 1rem',
-                  background: 'var(--dark-bg)',
-                  border: '1px solid var(--dark-border)',
-                  borderRadius: '8px',
-                  color: 'var(--text-primary)',
-                  fontSize: '1rem'
-                }}
-              />
-              <button
-                onClick={handleGetInsights}
-                disabled={isLoading}
-                className="btn btn-primary"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  padding: '0.875rem 1.5rem'
-                }}
-              >
-                <FaSearch />
-                {isLoading ? "Analyzing..." : "Get Insights"}
-              </button>
-            </div>
+          {/* Input Row */}
+          <div
+            className="jm-input-row"
+            style={styles.inputRow}
+          >
+            <input
+              type="text"
+              value={jobTitle}
+              onChange={(e) => setJobTitle(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && !isLoading && handleGetInsights()}
+              placeholder="Enter Job Title (e.g., React Developer)"
+              style={styles.input}
+            />
+            <button
+              className="jm-button"
+              onClick={handleGetInsights}
+              disabled={isLoading}
+              style={{
+                ...styles.button,
+                ...(isLoading ? styles.buttonDisabled : {}),
+              }}
+            >
+              <FaSearch />
+              {isLoading ? "Analyzing..." : "Get Insights"}
+            </button>
+          </div>
 
-            {/* Error */}
-            {error && (
-              <p style={{ color: '#ef4444', textAlign: 'center', marginBottom: '1rem' }}>
-                {error}
-              </p>
-            )}
+          {/* Error */}
+          {error && <p style={styles.error}>{error}</p>}
 
-            {/* Insights Display */}
-            {insights && (
-              <div style={{ marginTop: '2rem', animation: 'fadeIn 0.6s ease' }}>
-                <div style={{ 
-                  display: 'grid', 
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
-                  gap: '1.5rem', 
-                  marginBottom: '2rem' 
-                }}>
-                  {/* Salary Card */}
-                  <div style={{
-                    background: 'rgba(99, 102, 241, 0.05)',
-                    padding: '1.5rem',
-                    borderRadius: '12px',
-                    border: '1px solid var(--primary)',
-                    textAlign: 'center'
-                  }}>
-                    <h3 style={{ fontSize: '1rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
-                      Estimated Salary Range
-                    </h3>
-                    <p style={{ fontSize: '1.5rem', fontWeight: '700', color: '#fff' }}>
-                      {insights.averageSalary}
-                    </p>
-                  </div>
-
-                  {/* Demand Card */}
-                  <div style={{
-                    background: 'rgba(16, 185, 129, 0.05)',
-                    padding: '1.5rem',
-                    borderRadius: '12px',
-                    border: '1px solid #10b981',
-                    textAlign: 'center'
-                  }}>
-                    <h3 style={{ fontSize: '1rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
-                      Market Demand
-                    </h3>
-                    <p style={{ fontSize: '1.5rem', fontWeight: '700', color: '#10b981' }}>
-                      {insights.demand}
-                    </p>
-                  </div>
+          {/* Results */}
+          {insights && (
+            <div style={styles.insightsWrapper}>
+              {/* Stat Cards */}
+              <div style={styles.statsGrid}>
+                <div style={styles.statCard("#6366f1", "rgba(99,102,241,0.08)")}>
+                  <p style={styles.statLabel}>Estimated Salary Range</p>
+                  <p style={styles.statValue("#ffffff")}>{insights.averageSalary}</p>
                 </div>
-
-                {/* Chart */}
-                <div style={{
-                  background: 'var(--dark-bg)',
-                  padding: '1.5rem',
-                  borderRadius: '12px',
-                  border: '1px solid var(--dark-border)'
-                }}>
-                  <h3 style={{ fontSize: '1.5rem', fontWeight: '700', textAlign: 'center', marginBottom: '1.5rem' }}>
-                    Top Skills by Importance
-                  </h3>
-                  <div style={{ width: '100%', height: insights.topSkills.length * 60 }}>
-                    <ResponsiveContainer>
-                      <BarChart
-                        data={insights.topSkills}
-                        layout="vertical"
-                        margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                        barCategoryGap={20}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" stroke="var(--dark-border)" />
-                        <XAxis type="number" domain={[0, 100]} stroke="var(--text-secondary)" />
-                        <YAxis
-                          type="category"
-                          dataKey="name"
-                          width={150}
-                          tick={{ fontSize: 14, fill: 'var(--text-primary)' }}
-                        />
-                        <Tooltip 
-                          cursor={{ fill: 'rgba(99, 102, 241, 0.1)' }}
-                          contentStyle={{
-                            background: 'var(--dark-card)',
-                            border: '1px solid var(--dark-border)',
-                            color: 'var(--text-primary)'
-                          }}
-                        />
-                        <Bar dataKey="importance" barSize={20} radius={[0, 5, 5, 0]}>
-                          {insights.topSkills.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={barColors[index % barColors.length]} />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
+                <div style={styles.statCard("#10b981", "rgba(16,185,129,0.08)")}>
+                  <p style={styles.statLabel}>Market Demand</p>
+                  <p style={styles.statValue("#10b981")}>{insights.demand}</p>
                 </div>
               </div>
-            )}
-          </div>
+
+              {/* Chart */}
+              <div style={styles.chartContainer}>
+                <h3 style={styles.chartTitle}>Top Skills by Importance</h3>
+                <div style={{ width: "100%", height: chartHeight, minWidth: 280 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={insights.topSkills}
+                      layout="vertical"
+                      margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                      barCategoryGap={16}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="#2a3f5f" />
+                      <XAxis
+                        type="number"
+                        domain={[0, 100]}
+                        stroke="#a0b0c0"
+                        tick={{ fontSize: 12, fill: "#a0b0c0" }}
+                        tickLine={false}
+                      />
+                      <YAxis
+                        type="category"
+                        dataKey="name"
+                        width={yAxisWidth}
+                        tick={{ fontSize: 13, fill: "#ffffff" }}
+                        tickLine={false}
+                      />
+                      <Tooltip
+                        cursor={{ fill: "rgba(99,102,241,0.1)" }}
+                        contentStyle={{
+                          background: "#1a2847",
+                          border: "1px solid #2a3f5f",
+                          borderRadius: "8px",
+                          color: "#ffffff",
+                          fontSize: "13px",
+                        }}
+                        formatter={(value) => [`${value}%`, "Importance"]}
+                      />
+                      <Bar dataKey="importance" barSize={18} radius={[0, 5, 5, 0]}>
+                        {insights.topSkills.map((_, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={BAR_COLORS[index % BAR_COLORS.length]}
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </section>
-    </>
+    </div>
   );
 };
 
-export default JobMarketPage;
+export default JobMarketPage; 
