@@ -14,17 +14,15 @@ function Navbar() {
       const token = localStorage.getItem("token");
       setIsLoggedIn(!!token);
     };
-
     checkLoginStatus();
+
+    const handleScroll = () => setScrolled(window.scrollY > 50);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const toggleMenu = () => {
-    setIsOpen(!isOpen);
-  };
-
-  const closeMenu = () => {
-    setIsOpen(false);
-  };
+  const toggleMenu = () => setIsOpen(!isOpen);
+  const closeMenu = () => setIsOpen(false);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -36,7 +34,7 @@ function Navbar() {
   return (
     <nav className={`navbar ${scrolled ? "scrolled" : ""}`}>
       <div className="navbar-container">
-        <Link to="/home" className="navbar-logo">
+        <Link to="/home" className="navbar-logo" onClick={closeMenu}>
           <span className="logo-text">Career</span>
           <span className="logo-text gradient">AI</span>
         </Link>
@@ -52,65 +50,41 @@ function Navbar() {
                 Home
               </Link>
             </li>
-
             <li className="nav-item">
-              <Link
-                to="/resume-builder"
-                className="nav-links"
-                onClick={closeMenu}
-              >
+              <Link to="/resume-builder" className="nav-links" onClick={closeMenu}>
                 Resume Builder
               </Link>
             </li>
-
             <li className="nav-item">
-              <Link
-                to="/resume-analyze"
-                className="nav-links"
-                onClick={closeMenu}
-              >
+              <Link to="/resume-analyze" className="nav-links" onClick={closeMenu}>
                 Resume Analyzer
               </Link>
             </li>
-
             <li className="nav-item">
-              <Link
-                to="/mock-interview"
-                className="nav-links"
-                onClick={closeMenu}
-              >
+              <Link to="/mock-interview" className="nav-links" onClick={closeMenu}>
                 Mock Interview
               </Link>
             </li>
-
             <li className="nav-item">
-              <Link
-                to="/career-roadmap"
-                className="nav-links"
-                onClick={closeMenu}
-              >
+              <Link to="/career-roadmap" className="nav-links" onClick={closeMenu}>
                 Career Roadmap
               </Link>
             </li>
-
             <li className="nav-item">
               <Link to="/job-market" className="nav-links" onClick={closeMenu}>
                 Job Market
               </Link>
             </li>
-
             <li className="nav-item">
               <Link to="/chatbot" className="nav-links" onClick={closeMenu}>
                 AI Assistant
               </Link>
             </li>
-
             <li className="nav-item">
               <Link to="/about" className="nav-links" onClick={closeMenu}>
                 About
               </Link>
             </li>
-
             <li className="nav-item">
               <Link to="/contact" className="nav-links" onClick={closeMenu}>
                 Contact
